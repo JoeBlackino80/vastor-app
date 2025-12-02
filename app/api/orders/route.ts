@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+    console.log('Creating order with body:', JSON.stringify(body))
 
     const { data: order, error } = await (supabase
       .from('orders') as any)
@@ -24,34 +25,50 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      console.error('Supabase error:', error)
+      console.error('Order insert error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     console.log('Order created:', order.id)
 
-    const { data: availableCourier, error: courierError } = await (supabase
+    // Hladaj dostupneho kuriera
+    const { data: couriers, error: courierError } = await (supabase
       .from('couriers') as any)
       .select('*')
       .eq('status', 'available')
-      .limit(1)
-      .single()
 
-    console.log('Courier search result:', availableCourier, courierError)
+    console.log('Available couriers:', couriers, 'Error:', courierError)
 
-    if (availableCourier) {
-      await (supabase.from('orders') as any)
-        .update({ courier_id: availableCourier.id, status: 'assigned' })
+    if (couriers && couriers.length > 0) {
+      const courier = couriers[0]
+      console.log('Assigning courier:', courier.id)
+
+      // Update order
+      const { error: orderUpdateError } = await (supabase.from('orders') as any)
+        .update({ courier_id: courier.id, status: 'assigned' })
         .eq('id', order.id)
 
-      await (supabase.from('couriers') as any)
-        .update({ status: 'busy' })
-        .eq('id', availableCourier.id)
+      if (orderUpdateError) {
+        console.error('Order update error:', orderUpdateError)
+      } else {
+        console.log('Order updated to assigned')
+      }
 
-      console.log('Courier assigned:', availableCourier.id)
+      // Update courier
+      const { error: courierUpdateError } = await (supabase.from('couriers') as any)
+        .update({ status: 'busy' })
+        .eq('id', courier.id)
+
+      if (courierUpdateError) {
+        console.error('Courier update error:', courierUpdateError)
+      } else {
+        console.log('Courier updated to busy')
+      }
+    } else {
+      console.log('No available couriers found')
     }
 
-    return NextResponse.json({ success: true, order, courierAssigned: !!availableCourier })
+    return NextResponse.json({ success: true, order })
   } catch (error) {
     console.error('Order creation error:', error)
     return NextResponse.json({ error: 'Nepodarilo sa vytvorit objednavku' }, { status: 500 })
