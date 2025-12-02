@@ -1,10 +1,12 @@
 'use client'
 import { useState } from 'react'
-import { MapPin, Navigation, Play, Package, CheckCircle, LogIn } from 'lucide-react'
+import { MapPin, Navigation, Play, Package, CheckCircle, LogIn, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 
 export default function CourierPanel() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [courier, setCourier] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
@@ -21,12 +23,16 @@ export default function CourierPanel() {
   }
 
   const login = async () => {
-    if (!email) { setStatus('Zadaj email'); return }
+    if (!email || !password) { setStatus('Zadaj email a heslo'); return }
     setLoading(true)
     setStatus('')
     
     try {
-      const res = await fetch(`/api/courier-login?email=${encodeURIComponent(email)}`)
+      const res = await fetch('/api/courier-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
       const data = await res.json()
       
       if (data.courier) {
@@ -36,6 +42,8 @@ export default function CourierPanel() {
         setStatus('Tvoja registracia caka na schvalenie administratorom')
       } else if (data.message === 'rejected') {
         setStatus('Tvoja registracia bola zamietnuta')
+      } else if (data.message === 'wrong_password') {
+        setStatus('Nespravne heslo')
       } else {
         setStatus('Kurier s tymto emailom neexistuje')
       }
@@ -108,16 +116,34 @@ export default function CourierPanel() {
             <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center"><Navigation className="w-6 h-6 text-white" /></div>
             <div><h1 className="text-xl font-bold">Kuryr Panel</h1><p className="text-gray-500 text-sm">Prihlasenie</p></div>
           </div>
-          <input 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            placeholder="Tvoj email" 
-            className="w-full px-4 py-3 bg-gray-100 rounded-xl mb-4" 
-            onKeyDown={(e) => e.key === 'Enter' && login()} 
-          />
-          {status && <p className={`text-center text-sm mb-4 ${status.includes('caka') ? 'text-yellow-600' : 'text-red-500'}`}>{status}</p>}
-          <button onClick={login} disabled={loading} className="w-full py-4 bg-black text-white rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+          <div className="space-y-4">
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              placeholder="Email" 
+              className="w-full px-4 py-3 bg-gray-100 rounded-xl" 
+            />
+            <div className="relative">
+              <input 
+                type={showPassword ? 'text' : 'password'} 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                placeholder="Heslo" 
+                className="w-full px-4 py-3 bg-gray-100 rounded-xl pr-12" 
+                onKeyDown={(e) => e.key === 'Enter' && login()} 
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+          {status && <p className={`text-center text-sm mt-4 ${status.includes('caka') ? 'text-yellow-600' : 'text-red-500'}`}>{status}</p>}
+          <button onClick={login} disabled={loading} className="w-full py-4 bg-black text-white rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 mt-4">
             <LogIn className="w-5 h-5" /> {loading ? 'Nacitavam...' : 'Prihlasit sa'}
           </button>
           <p className="text-center text-gray-500 text-sm mt-6">

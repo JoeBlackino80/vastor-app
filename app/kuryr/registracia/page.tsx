@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { UserPlus, CheckCircle, Truck, Bike, Car } from 'lucide-react'
+import { UserPlus, CheckCircle, Truck, Bike, Car, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 
 export default function CourierRegistration() {
@@ -9,22 +9,43 @@ export default function CourierRegistration() {
     last_name: '',
     email: '',
     phone: '',
+    password: '',
+    password_confirm: '',
     vehicle_type: 'bike'
   })
+  const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
     setError('')
+
+    if (formData.password.length < 6) {
+      setError('Heslo musi mat aspon 6 znakov')
+      return
+    }
+
+    if (formData.password !== formData.password_confirm) {
+      setError('Hesla sa nezhoduju')
+      return
+    }
+
+    setIsSubmitting(true)
 
     try {
       const res = await fetch('/api/courier-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          vehicle_type: formData.vehicle_type
+        })
       })
       const data = await res.json()
 
@@ -113,6 +134,38 @@ export default function CourierRegistration() {
               onChange={(e) => setFormData({...formData, phone: e.target.value})}
               className="w-full px-4 py-3 bg-gray-100 rounded-xl"
               placeholder="+420..."
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Heslo</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                className="w-full px-4 py-3 bg-gray-100 rounded-xl pr-12"
+                placeholder="Min. 6 znakov"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Potvrdit heslo</label>
+            <input
+              type="password"
+              value={formData.password_confirm}
+              onChange={(e) => setFormData({...formData, password_confirm: e.target.value})}
+              className="w-full px-4 py-3 bg-gray-100 rounded-xl"
               required
             />
           </div>
