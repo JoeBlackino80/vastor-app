@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Validace
     const validatedData = courierSchema.safeParse(body)
     
     if (!validatedData.success) {
@@ -16,7 +15,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Kontrola duplicitního emailu
     const { data: existing } = await supabase
       .from('couriers')
       .select('id')
@@ -30,9 +28,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Vytvoření kurýra v Supabase
-    const { data: courier, error } = await supabase
-      .from('couriers')
+    const { data: courier, error } = await (supabase
+      .from('couriers') as any)
       .insert({
         first_name: validatedData.data.first_name,
         last_name: validatedData.data.last_name,
@@ -48,19 +45,11 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase error:', error)
-      if (error.code === '23505') {
-        return NextResponse.json(
-          { error: 'Email je již registrován' },
-          { status: 400 }
-        )
-      }
       return NextResponse.json(
         { error: 'Nepodařilo se dokončit registraci' },
         { status: 500 }
       )
     }
-
-    console.log('New courier registered:', courier)
 
     return NextResponse.json({ 
       success: true, 
@@ -77,8 +66,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  const { data: couriers, error } = await supabase
-    .from('couriers')
+  const { data: couriers, error } = await (supabase
+    .from('couriers') as any)
     .select('*')
     .order('created_at', { ascending: false })
 

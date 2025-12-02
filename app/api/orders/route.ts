@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Validace
     const validatedData = orderSchema.safeParse(body)
     
     if (!validatedData.success) {
@@ -16,9 +15,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Vytvoření objednávky v Supabase
-    const { data: order, error } = await supabase
-      .from('orders')
+    const { data: order, error } = await (supabase
+      .from('orders') as any)
       .insert({
         customer_name: validatedData.data.customer_name,
         customer_email: validatedData.data.customer_email,
@@ -43,8 +41,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('New order created:', order)
-
     return NextResponse.json({ 
       success: true, 
       order,
@@ -60,8 +56,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  const { data: orders, error } = await supabase
-    .from('orders')
+  const { data: orders, error } = await (supabase
+    .from('orders') as any)
     .select('*')
     .order('created_at', { ascending: false })
 
