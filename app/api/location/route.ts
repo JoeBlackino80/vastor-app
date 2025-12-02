@@ -6,18 +6,23 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { courier_id, order_id, latitude, longitude } = body
 
-    const { data, error } = await (supabase.from('courier_locations') as any)
-      .upsert({
+    console.log('Saving location:', { courier_id, order_id, latitude, longitude })
+
+    const { data, error } = await supabase
+      .from('courier_locations')
+      .insert({
         courier_id,
         order_id,
         latitude,
         longitude,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'order_id' })
+      })
       .select()
-      .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true, location: data })
   } catch (error) {
@@ -34,7 +39,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Missing order_id' }, { status: 400 })
   }
 
-  const { data, error } = await (supabase.from('courier_locations') as any)
+  const { data, error } = await supabase
+    .from('courier_locations')
     .select('*')
     .eq('order_id', order_id)
     .order('updated_at', { ascending: false })
