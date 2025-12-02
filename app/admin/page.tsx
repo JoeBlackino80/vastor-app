@@ -40,7 +40,6 @@ export default function AdminPage() {
 
   const deleteOrder = async (orderId: string) => {
     if (!confirm('Naozaj chces zmazat tuto objednavku?')) return
-    
     const res = await fetch('/api/delete-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -59,11 +58,7 @@ export default function AdminPage() {
   }
 
   const getCourierStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'bg-green-100 text-green-800'
-      case 'busy': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+    return status === 'available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
   }
 
   if (!isLoggedIn) {
@@ -88,7 +83,6 @@ export default function AdminPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Obnovit
           </button>
         </div>
-
         <div className="flex gap-4 mb-6">
           <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${activeTab === 'orders' ? 'bg-black text-white' : 'bg-white'}`}>
             <Package className="w-5 h-5" /> Objednavky ({orders.length})
@@ -97,7 +91,6 @@ export default function AdminPage() {
             <Users className="w-5 h-5" /> Kurieri ({couriers.length})
           </button>
         </div>
-
         {activeTab === 'orders' && (
           <div className="bg-white rounded-xl overflow-hidden">
             <table className="w-full">
@@ -115,42 +108,21 @@ export default function AdminPage() {
               <tbody>
                 {orders.map((order) => (
                   <tr key={order.id} className="border-t">
-                    <td className="px-4 py-3 text-sm">
-                      <div className="font-medium">{order.customer_name}</div>
-                      <div className="text-gray-500 text-xs">{order.customer_phone}</div>
-                    </td>
+                    <td className="px-4 py-3 text-sm"><div className="font-medium">{order.customer_name}</div><div className="text-gray-500 text-xs">{order.customer_phone}</div></td>
                     <td className="px-4 py-3 text-sm text-gray-600">{order.pickup_address?.substring(0, 25)}...</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{order.delivery_address?.substring(0, 25)}...</td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>{order.status}</span>
-                    </td>
+                    <td className="px-4 py-3 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>{order.status}</span></td>
                     <td className="px-4 py-3 text-sm font-medium">{order.price} Kc</td>
                     <td className="px-4 py-3 text-sm">
-                      {order.status === 'delivered' ? (
-                        <span className="text-green-600 text-xs">Dorucene</span>
-                      ) : (
-                        <select
-                          value={order.courier_id || ''}
-                          onChange={(e) => assignCourier(order.id, e.target.value)}
-                          className="px-2 py-1 bg-gray-100 rounded text-sm"
-                        >
+                      {order.status === 'delivered' ? <span className="text-green-600 text-xs">Dorucene</span> : (
+                        <select value={order.courier_id || ''} onChange={(e) => assignCourier(order.id, e.target.value)} className="px-2 py-1 bg-gray-100 rounded text-sm">
                           <option value="">-- Vyber --</option>
-                          {couriers.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.first_name} ({c.status})
-                            </option>
-                          ))}
+                          {couriers.map((c) => <option key={c.id} value={c.id}>{c.first_name} ({c.status})</option>)}
                         </select>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <button 
-                        onClick={() => deleteOrder(order.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Zmazat objednavku"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <button onClick={() => deleteOrder(order.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Zmazat"><Trash2 className="w-4 h-4" /></button>
                     </td>
                   </tr>
                 ))}
@@ -159,7 +131,6 @@ export default function AdminPage() {
             {orders.length === 0 && <p className="p-6 text-center text-gray-500">Ziadne objednavky</p>}
           </div>
         )}
-
         {activeTab === 'couriers' && (
           <div className="bg-white rounded-xl overflow-hidden">
             <table className="w-full">
@@ -180,9 +151,7 @@ export default function AdminPage() {
                     <td className="px-6 py-4 text-sm text-gray-600">{courier.email}</td>
                     <td className="px-6 py-4 text-sm">{courier.phone}</td>
                     <td className="px-6 py-4 text-sm">{courier.vehicle_type}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCourierStatusColor(courier.status)}`}>{courier.status}</span>
-                    </td>
+                    <td className="px-6 py-4 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getCourierStatusColor(courier.status)}`}>{courier.status}</span></td>
                     <td className="px-6 py-4 text-sm">{courier.rating} ⭐</td>
                   </tr>
                 ))}
