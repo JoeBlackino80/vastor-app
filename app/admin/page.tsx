@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Package, Users, Lock, RefreshCw, UserPlus } from 'lucide-react'
+import { Package, Users, Lock, RefreshCw, Trash2 } from 'lucide-react'
 
 export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -34,6 +34,17 @@ export default function AdminPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ order_id: orderId, courier_id: courierId })
+    })
+    if (res.ok) fetchData()
+  }
+
+  const deleteOrder = async (orderId: string) => {
+    if (!confirm('Naozaj chces zmazat tuto objednavku?')) return
+    
+    const res = await fetch('/api/delete-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: orderId })
     })
     if (res.ok) fetchData()
   }
@@ -95,10 +106,10 @@ export default function AdminPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium">Zakaznik</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Vyzdvihnutie</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Dorucenie</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Typ</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Cena</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Kurier</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Akcie</th>
                 </tr>
               </thead>
               <tbody>
@@ -108,9 +119,8 @@ export default function AdminPage() {
                       <div className="font-medium">{order.customer_name}</div>
                       <div className="text-gray-500 text-xs">{order.customer_phone}</div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{order.pickup_address?.substring(0, 30)}...</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{order.delivery_address?.substring(0, 30)}...</td>
-                    <td className="px-4 py-3 text-sm">{order.service_type}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{order.pickup_address?.substring(0, 25)}...</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{order.delivery_address?.substring(0, 25)}...</td>
                     <td className="px-4 py-3 text-sm">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>{order.status}</span>
                     </td>
@@ -124,14 +134,23 @@ export default function AdminPage() {
                           onChange={(e) => assignCourier(order.id, e.target.value)}
                           className="px-2 py-1 bg-gray-100 rounded text-sm"
                         >
-                          <option value="">-- Vyber kuriera --</option>
+                          <option value="">-- Vyber --</option>
                           {couriers.map((c) => (
                             <option key={c.id} value={c.id}>
-                              {c.first_name} {c.last_name} ({c.status})
+                              {c.first_name} ({c.status})
                             </option>
                           ))}
                         </select>
                       )}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <button 
+                        onClick={() => deleteOrder(order.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Zmazat objednavku"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}
