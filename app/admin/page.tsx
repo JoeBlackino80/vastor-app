@@ -1,21 +1,22 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Package, Users, Lock, RefreshCw, Trash2, CheckCircle, XCircle } from 'lucide-react'
+import { Package, Users, Lock, Trash2, UserCheck, UserX, BarChart3 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function AdminPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
   const [activeTab, setActiveTab] = useState('orders')
   const [orders, setOrders] = useState<any[]>([])
   const [couriers, setCouriers] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
 
-  const handleLogin = () => {
-    if (password === 'vastor2024') setIsLoggedIn(true)
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchData()
+    }
+  }, [isAuthenticated])
 
   const fetchData = async () => {
-    setLoading(true)
     const [ordersRes, couriersRes] = await Promise.all([
       fetch('/api/orders'),
       fetch('/api/couriers')
@@ -24,165 +25,184 @@ export default function AdminPage() {
     const couriersData = await couriersRes.json()
     setOrders(ordersData.orders || [])
     setCouriers(couriersData.couriers || [])
-    setLoading(false)
   }
 
-  useEffect(() => { if (isLoggedIn) fetchData() }, [isLoggedIn])
+  const handleLogin = () => {
+    if (password === 'vastor2024') {
+      setIsAuthenticated(true)
+    } else {
+      alert('Nesprávne heslo')
+    }
+  }
+
+  const deleteOrder = async (id: string) => {
+    if (!confirm('Naozaj chcete zmazať túto objednávku?')) return
+    await fetch('/api/delete-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: id })
+    })
+    fetchData()
+  }
 
   const assignCourier = async (orderId: string, courierId: string) => {
-    const res = await fetch('/api/assign-courier', {
+    await fetch('/api/assign-courier', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ order_id: orderId, courier_id: courierId })
     })
-    if (res.ok) fetchData()
+    fetchData()
   }
 
-  const deleteOrder = async (orderId: string) => {
-    if (!confirm('Naozaj chces zmazat tuto objednavku?')) return
-    const res = await fetch('/api/delete-order', {
+  const approveCourier = async (courierId: string, action: 'approve' | 'reject') => {
+    await fetch('/api/approve-courier', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_id: orderId })
+      body: JSON.stringify({ courier_id: courierId, action })
     })
-    if (res.ok) fetchData()
-  }
-
-  const approveCourier = async (courierId: string) => {
-    const res = await fetch('/api/approve-courier', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ courier_id: courierId, action: 'approve' })
-    })
-    if (res.ok) fetchData()
-  }
-
-  const rejectCourier = async (courierId: string) => {
-    if (!confirm('Naozaj chces zamietnut tohto kuriera?')) return
-    const res = await fetch('/api/approve-courier', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ courier_id: courierId, action: 'reject' })
-    })
-    if (res.ok) fetchData()
+    fetchData()
   }
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'assigned': return 'bg-blue-100 text-blue-800'
-      case 'delivered': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+    if (status === 'delivered') return 'bg-green-100 text-green-700'
+    if (status === 'assigned') return 'bg-blue-100 text-blue-700'
+    return 'bg-yellow-100 text-yellow-700'
   }
 
   const getCourierStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'bg-green-100 text-green-800'
-      case 'busy': return 'bg-blue-100 text-blue-800'
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'rejected': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+    if (status === 'available') return 'bg-green-100 text-green-700'
+    if (status === 'busy') return 'bg-red-100 text-red-700'
+    if (status === 'pending') return 'bg-yellow-100 text-yellow-700'
+    return 'bg-gray-100 text-gray-700'
   }
 
   const pendingCouriers = couriers.filter(c => c.status === 'pending')
   const approvedCouriers = couriers.filter(c => c.status !== 'pending' && c.status !== 'rejected')
+  const availableCouriers = couriers.filter(c => c.status === 'available')
 
-  if (!isLoggedIn) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-sm w-full">
-          <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-6"><Lock className="w-8 h-8 text-white" /></div>
-          <h1 className="text-2xl font-bold text-center mb-6">Admin Panel</h1>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Heslo" className="w-full px-4 py-3 bg-gray-100 rounded-xl mb-4" onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
-          <button onClick={handleLogin} className="w-full py-3 bg-black text-white rounded-xl font-semibold">Prihlasit</button>
+        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md w-full">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
+              <Lock className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-xl font-bold">Admin Panel</h1>
+          </div>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Heslo"
+            className="w-full px-4 py-3 bg-gray-100 rounded-xl mb-4"
+            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+          />
+          <button onClick={handleLogin} className="w-full py-4 bg-black text-white rounded-xl font-semibold">
+            Prihlásiť
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Admin Panel</h1>
-          <button onClick={fetchData} className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Obnovit
-          </button>
+    <div className="min-h-screen bg-gray-100">
+      <div className="bg-black text-white p-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <h1 className="text-2xl font-bold">VASTOR Admin</h1>
+          <Link href="/admin/stats" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl transition-colors">
+            <BarChart3 className="w-5 h-5" />
+            Štatistiky
+          </Link>
         </div>
+      </div>
 
+      <div className="max-w-6xl mx-auto p-6">
+        {/* Tabs */}
         <div className="flex gap-4 mb-6">
-          <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${activeTab === 'orders' ? 'bg-black text-white' : 'bg-white'}`}>
-            <Package className="w-5 h-5" /> Objednavky ({orders.length})
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors ${activeTab === 'orders' ? 'bg-black text-white' : 'bg-white'}`}
+          >
+            <Package className="w-5 h-5" /> Objednávky ({orders.length})
           </button>
-          <button onClick={() => setActiveTab('couriers')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${activeTab === 'couriers' ? 'bg-black text-white' : 'bg-white'}`}>
-            <Users className="w-5 h-5" /> Kurieri ({couriers.length})
-            {pendingCouriers.length > 0 && <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">{pendingCouriers.length}</span>}
+          <button
+            onClick={() => setActiveTab('couriers')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors ${activeTab === 'couriers' ? 'bg-black text-white' : 'bg-white'}`}
+          >
+            <Users className="w-5 h-5" /> Kuriéri ({couriers.length})
+            {pendingCouriers.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{pendingCouriers.length}</span>}
           </button>
         </div>
 
+        {/* Orders */}
         {activeTab === 'orders' && (
-          <div className="bg-white rounded-xl overflow-hidden">
+          <div className="bg-white rounded-xl overflow-hidden shadow-sm">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Zakaznik</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Vyzdvihnutie</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Dorucenie</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Zákazník</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Odkiaľ</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Kam</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Cena</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Kurier</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Kuriér</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Akcie</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((order) => (
                   <tr key={order.id} className="border-t">
-                    <td className="px-4 py-3 text-sm"><div className="font-medium">{order.customer_name}</div><div className="text-gray-500 text-xs">{order.customer_phone}</div></td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{order.pickup_address?.substring(0, 25)}...</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{order.delivery_address?.substring(0, 25)}...</td>
-                    <td className="px-4 py-3 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>{order.status}</span></td>
-                    <td className="px-4 py-3 text-sm font-medium">{order.price} Kc</td>
+                    <td className="px-4 py-3 text-sm">{order.customer_name}</td>
+                    <td className="px-4 py-3 text-sm truncate max-w-[150px]">{order.pickup_address}</td>
+                    <td className="px-4 py-3 text-sm truncate max-w-[150px]">{order.delivery_address}</td>
+                    <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.status)}`}>{order.status}</span></td>
+                    <td className="px-4 py-3 text-sm font-medium">{order.price} Kč</td>
                     <td className="px-4 py-3 text-sm">
-                      {order.status === 'delivered' ? <span className="text-green-600 text-xs">Dorucene</span> : (
-                        <select value={order.courier_id || ''} onChange={(e) => assignCourier(order.id, e.target.value)} className="px-2 py-1 bg-gray-100 rounded text-sm">
-                          <option value="">-- Vyber --</option>
-                          {approvedCouriers.map((c) => <option key={c.id} value={c.id}>{c.first_name} ({c.status})</option>)}
+                      {order.status === 'pending' ? (
+                        <select onChange={(e) => assignCourier(order.id, e.target.value)} className="text-sm border rounded px-2 py-1">
+                          <option value="">Priradiť...</option>
+                          {availableCouriers.map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
                         </select>
-                      )}
+                      ) : order.courier_id ? (
+                        couriers.find(c => c.id === order.courier_id)?.first_name || '-'
+                      ) : '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      <button onClick={() => deleteOrder(order.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Zmazat"><Trash2 className="w-4 h-4" /></button>
+                    <td className="px-4 py-3">
+                      <button onClick={() => deleteOrder(order.id)} className="text-red-500 hover:text-red-700">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {orders.length === 0 && <p className="p-6 text-center text-gray-500">Ziadne objednavky</p>}
+            {orders.length === 0 && <p className="p-6 text-center text-gray-500">Žiadne objednávky</p>}
           </div>
         )}
 
+        {/* Couriers */}
         {activeTab === 'couriers' && (
           <div className="space-y-6">
-            {/* Pending approvals */}
+            {/* Pending Approval */}
             {pendingCouriers.length > 0 && (
-              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
-                <h3 className="font-bold text-yellow-800 mb-4">Cakaju na schvalenie ({pendingCouriers.length})</h3>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                <h3 className="font-bold text-yellow-800 mb-4">Čakajú na schválenie ({pendingCouriers.length})</h3>
                 <div className="space-y-3">
                   {pendingCouriers.map((courier) => (
-                    <div key={courier.id} className="bg-white rounded-xl p-4 flex items-center justify-between">
+                    <div key={courier.id} className="flex items-center justify-between bg-white rounded-xl p-4">
                       <div>
                         <p className="font-medium">{courier.first_name} {courier.last_name}</p>
                         <p className="text-sm text-gray-500">{courier.email} • {courier.phone}</p>
-                        <p className="text-sm text-gray-500">Vozidlo: {courier.vehicle_type}</p>
+                        <p className="text-sm text-gray-500">{courier.vehicle_type}</p>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => approveCourier(courier.id)} className="p-2 bg-green-100 text-green-600 hover:bg-green-200 rounded-lg" title="Schvalit">
-                          <CheckCircle className="w-5 h-5" />
+                        <button onClick={() => approveCourier(courier.id, 'approve')} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                          <UserCheck className="w-5 h-5" />
                         </button>
-                        <button onClick={() => rejectCourier(courier.id)} className="p-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg" title="Zamietnut">
-                          <XCircle className="w-5 h-5" />
+                        <button onClick={() => approveCourier(courier.id, 'reject')} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                          <UserX className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
@@ -191,33 +211,35 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* Approved couriers */}
-            <div className="bg-white rounded-xl overflow-hidden">
+            {/* Approved Couriers */}
+            <div className="bg-white rounded-xl overflow-hidden shadow-sm">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-medium">Meno</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium">Email</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium">Telefon</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium">Vozidlo</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium">Status</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium">Hodnotenie</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Meno</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Email</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Telefón</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Vozidlo</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Hodnotenie</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Doručenia</th>
                   </tr>
                 </thead>
                 <tbody>
                   {approvedCouriers.map((courier) => (
                     <tr key={courier.id} className="border-t">
-                      <td className="px-6 py-4 text-sm font-medium">{courier.first_name} {courier.last_name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{courier.email}</td>
-                      <td className="px-6 py-4 text-sm">{courier.phone}</td>
-                      <td className="px-6 py-4 text-sm">{courier.vehicle_type}</td>
-                      <td className="px-6 py-4 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getCourierStatusColor(courier.status)}`}>{courier.status}</span></td>
-                      <td className="px-6 py-4 text-sm">{courier.rating} ⭐</td>
+                      <td className="px-4 py-3 text-sm font-medium">{courier.first_name} {courier.last_name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{courier.email}</td>
+                      <td className="px-4 py-3 text-sm">{courier.phone}</td>
+                      <td className="px-4 py-3 text-sm">{courier.vehicle_type}</td>
+                      <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs ${getCourierStatusColor(courier.status)}`}>{courier.status}</span></td>
+                      <td className="px-4 py-3 text-sm">{courier.rating} ⭐</td>
+                      <td className="px-4 py-3 text-sm">{courier.total_deliveries || 0}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {approvedCouriers.length === 0 && <p className="p-6 text-center text-gray-500">Ziadni schvaleni kurieri</p>}
+              {approvedCouriers.length === 0 && <p className="p-6 text-center text-gray-500">Žiadni schválení kuriéri</p>}
             </div>
           </div>
         )}

@@ -9,9 +9,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing order_id or courier_id' }, { status: 400 })
     }
 
+    // Get order details
+    const { data: order } = await (supabase.from('orders') as any)
+      .select('*')
+      .eq('id', order_id)
+      .single()
+
+    // Calculate courier earnings (70% of order price)
+    const courierEarnings = order ? Math.round(order.price * 0.7) : 0
+
     // Update order status to delivered
     const { error: orderError } = await (supabase.from('orders') as any)
-      .update({ status: 'delivered' })
+      .update({ 
+        status: 'delivered',
+        completed_at: new Date().toISOString(),
+        courier_earnings: courierEarnings
+      })
       .eq('id', order_id)
 
     if (orderError) {
@@ -19,19 +32,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: orderError.message }, { status: 500 })
     }
 
-    // Update courier status to available
+    // Update courier status to available and increment deliveries
+    const { data: courier } = await (supabase.from('couriers') as any)
+      .select('total_deliveries')
+      .eq('id', courier_id)
+      .single()
+
     const { error: courierError } = await (supabase.from('couriers') as any)
-      .update({ status: 'available' })
+      .update({ 
+        status: 'available',
+        total_deliveries: (courier?.total_deliveries || 0) + 1
+      })
       .eq('id', courier_id)
 
     if (courierError) {
       console.error('Courier update error:', courierError)
-      return NextResponse.json({ error: courierError.message }, { status: 500 })
     }
 
-    console.log('Delivery completed - Order:', order_id, 'Courier:', courier_id)
+    // Send rating email to customer
+    if (order?.customer_email) {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://vastor-app.vercel.app'}/api/send-rating-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: order.customer_email,
+            orderId: order_id,
+            customerName: order.customer_name
+          })
+        })
+      } catch (emailError) {
+        console.error('Rating email error:', emailError)
+      }
+    }
 
-    return NextResponse.json({ success: true })
+    console.log('Delivery completed - Order:', order_id, 'Courier:', courier_id, 'Earnings:', courierEarnings)
+
+    return NextResponse.json({ success: true, earnings: courierEarnings })
   } catch (error) {
     console.error('Complete delivery error:', error)
     return NextResponse.json({ error: 'Failed to complete delivery' }, { status: 500 })
