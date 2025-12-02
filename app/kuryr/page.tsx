@@ -1,151 +1,129 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { MapPin, Navigation, Play, Package, CheckCircle, LogOut, Eye, EyeOff, BarChart3 } from 'lucide-react'
+import { MapPin, Navigation, Play, Package, CheckCircle, X, Clock, Euro, Bell } from 'lucide-react'
 import Link from 'next/link'
-
-interface Order {
-  id: string
-  pickup_address: string
-  delivery_address: string
-  customer_name: string
-  customer_phone: string
-  status: string
-  price: number
-}
 
 export default function CourierPanel() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [courier, setCourier] = useState<any>(null)
-  const [orders, setOrders] = useState<Order[]>([])
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [isTracking, setIsTracking] = useState(false)
-  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null)
-  const [status, setStatus] = useState('')
   const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [offers, setOffers] = useState<any[]>([])
+  const [orders, setOrders] = useState<any[]>([])
+  const [selectedOrder, setSelectedOrder] = useState<any>(null)
+  const [isTracking, setIsTracking] = useState(false)
   const [watchId, setWatchId] = useState<number | null>(null)
 
+  // Polling pre nové ponuky
   useEffect(() => {
-    const savedCourier = localStorage.getItem('courier')
-    if (savedCourier) {
-      const c = JSON.parse(savedCourier)
-      setCourier(c)
-      fetchMyOrders(c.id)
+    if (!courier) return
+    
+    const fetchOffers = async () => {
+      const res = await fetch(`/api/courier-offers?courier_id=${courier.id}`)
+      const data = await res.json()
+      setOffers(data.offers || [])
     }
-  }, [])
+
+    const fetchOrders = async () => {
+      const res = await fetch(`/api/courier-orders?courier_id=${courier.id}`)
+      const data = await res.json()
+      setOrders(data.orders || [])
+    }
+
+    fetchOffers()
+    fetchOrders()
+
+    // Poll každé 3 sekundy
+    const interval = setInterval(() => {
+      fetchOffers()
+      fetchOrders()
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [courier])
 
   const login = async () => {
-    setIsLoading(true)
     setError('')
-    try {
-      const res = await fetch('/api/courier-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-      const data = await res.json()
-
-      if (data.courier) {
-        setCourier(data.courier)
-        localStorage.setItem('courier', JSON.stringify(data.courier))
-        fetchMyOrders(data.courier.id)
-      } else {
-        if (data.message === 'not_found') setError('Kurýr s týmto emailom neexistuje')
-        else if (data.message === 'wrong_password') setError('Nesprávne heslo')
-        else if (data.message === 'pending_approval') setError('Tvoja registrácia čaká na schválenie administrátorom')
-        else if (data.message === 'rejected') setError('Tvoja registrácia bola zamietnutá')
-        else setError('Prihlásenie zlyhalo')
-      }
-    } catch (err) {
-      setError('Chyba pri prihlásení')
-    }
-    setIsLoading(false)
-  }
-
-  const logout = () => {
-    setCourier(null)
-    setOrders([])
-    setSelectedOrder(null)
-    localStorage.removeItem('courier')
-    if (watchId) navigator.geolocation.clearWatch(watchId)
-  }
-
-  const fetchMyOrders = async (courierId: string) => {
-    const res = await fetch(`/api/courier-orders?courier_id=${courierId}`)
+    const res = await fetch(`/api/courier-login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`)
     const data = await res.json()
-    setOrders(data.orders || [])
-    if (data.orders?.length > 0) setSelectedOrder(data.orders[0])
+
+    if (data.courier) {
+      setCourier(data.courier)
+      // Začni zdieľať polohu
+      startLocationSharing(data.courier.id)
+    } else if (data.message === 'pending_approval') {
+      setError('Tvoja registrácia čaká na schválenie')
+    } else if (data.message === 'rejected') {
+      setError('Tvoja registrácia bola zamietnutá')
+    } else if (data.message === 'wrong_password') {
+      setError('Nesprávne heslo')
+    } else {
+      setError('Kurýr nenájdený')
+    }
   }
 
-  const startTracking = () => {
-    if (!selectedOrder || !courier) return
-    if (!navigator.geolocation) { setStatus('Geolokácia nie je podporovaná'); return }
-    
-    setIsTracking(true)
-    setStatus('Sledovanie aktívne...')
-    
+  const startLocationSharing = (courierId: string) => {
+    if (!navigator.geolocation) return
+
     const id = navigator.geolocation.watchPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords
-        setCurrentLocation({ lat: latitude, lng: longitude })
-        try {
-          await fetch('/api/location', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ courier_id: courier.id, order_id: selectedOrder.id, latitude, longitude })
+      async (pos) => {
+        await fetch('/api/location', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            courier_id: courierId,
+            order_id: selectedOrder?.id || 'idle',
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude
           })
-          setStatus('Aktualizované: ' + new Date().toLocaleTimeString())
-        } catch (err) {
-          setStatus('Chyba pri odosielaní')
-        }
+        })
       },
-      (error) => { setStatus('Chyba GPS'); setIsTracking(false) },
-      { enableHighAccuracy: true }
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 10000 }
     )
     setWatchId(id)
+    setIsTracking(true)
   }
 
-  const stopTracking = () => {
-    if (watchId) navigator.geolocation.clearWatch(watchId)
-    setIsTracking(false)
-    setStatus('')
+  const respondToOffer = async (orderId: string, action: 'accept' | 'reject') => {
+    await fetch('/api/respond-offer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: orderId, courier_id: courier.id, action })
+    })
+
+    // Refresh
+    setOffers(offers.filter(o => o.id !== orderId))
+    if (action === 'accept') {
+      const res = await fetch(`/api/courier-orders?courier_id=${courier.id}`)
+      const data = await res.json()
+      setOrders(data.orders || [])
+    }
   }
 
   const completeDelivery = async () => {
-    if (!selectedOrder || !courier) return
-    
-    try {
-      const res = await fetch('/api/complete-delivery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: selectedOrder.id, courier_id: courier.id })
-      })
-      const data = await res.json()
-      
-      if (data.success) {
-        stopTracking()
-        alert(`Doručenie dokončené! Zarobil si ${data.earnings} Kč`)
-        fetchMyOrders(courier.id)
-        setSelectedOrder(null)
-      }
-    } catch (err) {
-      alert('Chyba pri dokončení doručenia')
-    }
+    if (!selectedOrder) return
+    await fetch('/api/complete-delivery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: selectedOrder.id, courier_id: courier.id })
+    })
+    setSelectedOrder(null)
+    setOrders(orders.filter(o => o.id !== selectedOrder.id))
   }
 
+  // Login screen
   if (!courier) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6 flex items-center justify-center">
-        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md w-full">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl p-8 shadow-lg w-full max-w-md">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
               <Navigation className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Kurýr Panel</h1>
-              <p className="text-gray-500 text-sm">Prihlás sa do svojho účtu</p>
+              <h1 className="text-xl font-bold">VASTOR Kurýr</h1>
+              <p className="text-gray-500 text-sm">Prihlásenie</p>
             </div>
           </div>
 
@@ -156,137 +134,159 @@ export default function CourierPanel() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
               className="w-full px-4 py-3 bg-gray-100 rounded-xl"
-              onKeyPress={(e) => e.key === 'Enter' && login()}
             />
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Heslo"
-                className="w-full px-4 py-3 bg-gray-100 rounded-xl pr-12"
-                onKeyPress={(e) => e.key === 'Enter' && login()}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Heslo"
+              className="w-full px-4 py-3 bg-gray-100 rounded-xl"
+            />
+            {error && <p className="text-red-500 text-sm">{error}</p>}
             <button
               onClick={login}
-              disabled={isLoading}
-              className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50"
+              className="w-full py-4 bg-black text-white rounded-xl font-semibold"
             >
-              {isLoading ? 'Prihlasujem...' : 'Prihlásiť sa'}
+              Prihlásiť sa
             </button>
           </div>
 
           <p className="text-center text-gray-500 text-sm mt-6">
-            Nemáš účet? <Link href="/kuryr/registracia" className="text-black underline">Zaregistruj sa</Link>
+            Nemáš účet? <Link href="/kuryr/registracia" className="text-black underline">Registrovať sa</Link>
           </p>
         </div>
       </div>
     )
   }
 
+  // Main panel
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-md mx-auto space-y-4">
-        {/* Header */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
-                <Navigation className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold">{courier.first_name} {courier.last_name}</h1>
-                <p className="text-gray-500 text-sm">{courier.email}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Link href="/kuryr/dashboard" className="p-2 hover:bg-gray-100 rounded-full" title="Dashboard">
-                <BarChart3 className="w-5 h-5" />
-              </Link>
-              <button onClick={logout} className="p-2 hover:bg-gray-100 rounded-full" title="Odhlásiť">
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="bg-black text-white p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-bold">{courier.first_name} {courier.last_name}</p>
+            <p className="text-sm text-gray-400">{isTracking ? '🟢 Online' : '🔴 Offline'}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`w-3 h-3 rounded-full ${courier.status === 'available' ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-sm text-gray-600">{courier.status === 'available' ? 'Dostupný' : 'Zaneprázdnený'}</span>
-            <span className="ml-auto text-sm">{courier.rating} ⭐</span>
-          </div>
+          <Link href="/kuryr/dashboard" className="px-4 py-2 bg-white/10 rounded-lg text-sm">
+            Dashboard
+          </Link>
         </div>
+      </div>
 
-        {/* Orders */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg">
-          <h2 className="font-bold mb-4 flex items-center gap-2">
-            <Package className="w-5 h-5" /> Moje objednávky ({orders.length})
-          </h2>
-          {orders.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">Žiadne priradené objednávky</p>
-          ) : (
+      <div className="p-4 space-y-4">
+        {/* Nové ponuky - Bolt/Uber štýl */}
+        {offers.map((offer) => (
+          <div key={offer.id} className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
+            <div className="bg-green-500 text-white p-4">
+              <div className="flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                <span className="font-bold">NOVÁ OBJEDNÁVKA!</span>
+              </div>
+            </div>
+            
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Euro className="w-5 h-5 text-green-600" />
+                  <span className="text-2xl font-bold">{offer.price} Kč</span>
+                </div>
+                {offer.offer_distance && (
+                  <div className="flex items-center gap-1 text-gray-500">
+                    <MapPin className="w-4 h-4" />
+                    <span>{offer.offer_distance.toFixed(1)} km</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full mt-1.5"></div>
+                  <div>
+                    <p className="text-xs text-gray-500">VYZDVIHNUTIE</p>
+                    <p className="font-medium">{offer.pickup_address}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mt-1.5"></div>
+                  <div>
+                    <p className="text-xs text-gray-500">DORUČENIE</p>
+                    <p className="font-medium">{offer.delivery_address}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Countdown */}
+              <div className="flex items-center gap-2 text-orange-500 mb-4">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm">Zostáva 30 sekúnd</span>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => respondToOffer(offer.id, 'reject')}
+                  className="flex-1 py-4 bg-gray-200 text-gray-700 rounded-xl font-semibold flex items-center justify-center gap-2"
+                >
+                  <X className="w-5 h-5" /> Odmietnuť
+                </button>
+                <button
+                  onClick={() => respondToOffer(offer.id, 'accept')}
+                  className="flex-1 py-4 bg-green-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-5 h-5" /> Prijať
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Aktívne objednávky */}
+        {orders.length > 0 && (
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <h2 className="font-bold mb-3 flex items-center gap-2">
+              <Package className="w-5 h-5" /> Aktívne objednávky
+            </h2>
             <div className="space-y-3">
               {orders.map((order) => (
                 <div
                   key={order.id}
                   onClick={() => setSelectedOrder(order)}
-                  className={`p-4 rounded-xl cursor-pointer transition-colors ${selectedOrder?.id === order.id ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    selectedOrder?.id === order.id ? 'border-black bg-gray-50' : 'border-gray-200'
+                  }`}
                 >
-                  <p className="font-medium truncate">{order.pickup_address}</p>
-                  <p className="text-sm opacity-70 truncate">→ {order.delivery_address}</p>
-                  <div className="flex justify-between mt-2">
-                    <span className="text-sm">{order.customer_name}</span>
+                  <div className="flex justify-between items-start mb-2">
                     <span className="font-bold">{order.price} Kč</span>
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                      {order.status}
+                    </span>
                   </div>
+                  <p className="text-sm text-gray-600">{order.pickup_address}</p>
+                  <p className="text-sm">→ {order.delivery_address}</p>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-
-        {/* Tracking */}
-        {selectedOrder && (
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h2 className="font-bold mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5" /> GPS Sledovanie
-            </h2>
-            {currentLocation && (
-              <div className="bg-gray-100 rounded-xl p-3 mb-4 text-sm">
-                📍 {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
-              </div>
-            )}
-            {status && <p className="text-sm text-center mb-4 text-gray-600">{status}</p>}
-            {!isTracking ? (
-              <button onClick={startTracking} className="w-full py-4 bg-black text-white rounded-xl font-semibold flex items-center justify-center gap-2">
-                <Play className="w-5 h-5" /> Spustiť sledovanie
-              </button>
-            ) : (
-              <button onClick={stopTracking} className="w-full py-4 bg-gray-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2">
-                <Package className="w-5 h-5" /> Zastaviť sledovanie
-              </button>
-            )}
           </div>
         )}
 
-        {/* Complete Delivery */}
+        {/* Dokončiť doručenie */}
         {selectedOrder && (
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h2 className="font-bold mb-4 flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" /> Dokončiť doručenie
-            </h2>
-            <p className="text-gray-500 text-sm mb-4">Zárobíš: <strong className="text-green-600">{Math.round(selectedOrder.price * 0.7)} Kč</strong></p>
-            <button onClick={completeDelivery} className="w-full py-4 bg-green-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2">
-              <CheckCircle className="w-5 h-5" /> Doručenie dokončené
-            </button>
+          <button
+            onClick={completeDelivery}
+            className="w-full py-4 bg-green-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2"
+          >
+            <CheckCircle className="w-5 h-5" /> Doručenie dokončené
+          </button>
+        )}
+
+        {/* Prázdny stav */}
+        {offers.length === 0 && orders.length === 0 && (
+          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+            <Navigation className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">Čakám na objednávky...</p>
+            <p className="text-sm text-gray-400 mt-2">Nové objednávky sa zobrazia automaticky</p>
           </div>
         )}
       </div>
