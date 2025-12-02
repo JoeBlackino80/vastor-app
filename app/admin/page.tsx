@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Package, Users, Lock, RefreshCw, Trash2 } from 'lucide-react'
+import { Package, Users, Lock, RefreshCw, Trash2, CheckCircle, XCircle } from 'lucide-react'
 
 export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -48,6 +48,25 @@ export default function AdminPage() {
     if (res.ok) fetchData()
   }
 
+  const approveCourier = async (courierId: string) => {
+    const res = await fetch('/api/approve-courier', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courier_id: courierId, action: 'approve' })
+    })
+    if (res.ok) fetchData()
+  }
+
+  const rejectCourier = async (courierId: string) => {
+    if (!confirm('Naozaj chces zamietnut tohto kuriera?')) return
+    const res = await fetch('/api/approve-courier', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courier_id: courierId, action: 'reject' })
+    })
+    if (res.ok) fetchData()
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800'
@@ -58,8 +77,17 @@ export default function AdminPage() {
   }
 
   const getCourierStatusColor = (status: string) => {
-    return status === 'available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+    switch (status) {
+      case 'available': return 'bg-green-100 text-green-800'
+      case 'busy': return 'bg-blue-100 text-blue-800'
+      case 'pending': return 'bg-yellow-100 text-yellow-800'
+      case 'rejected': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
   }
+
+  const pendingCouriers = couriers.filter(c => c.status === 'pending')
+  const approvedCouriers = couriers.filter(c => c.status !== 'pending' && c.status !== 'rejected')
 
   if (!isLoggedIn) {
     return (
@@ -83,14 +111,17 @@ export default function AdminPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Obnovit
           </button>
         </div>
+
         <div className="flex gap-4 mb-6">
           <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${activeTab === 'orders' ? 'bg-black text-white' : 'bg-white'}`}>
             <Package className="w-5 h-5" /> Objednavky ({orders.length})
           </button>
           <button onClick={() => setActiveTab('couriers')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${activeTab === 'couriers' ? 'bg-black text-white' : 'bg-white'}`}>
             <Users className="w-5 h-5" /> Kurieri ({couriers.length})
+            {pendingCouriers.length > 0 && <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">{pendingCouriers.length}</span>}
           </button>
         </div>
+
         {activeTab === 'orders' && (
           <div className="bg-white rounded-xl overflow-hidden">
             <table className="w-full">
@@ -117,7 +148,7 @@ export default function AdminPage() {
                       {order.status === 'delivered' ? <span className="text-green-600 text-xs">Dorucene</span> : (
                         <select value={order.courier_id || ''} onChange={(e) => assignCourier(order.id, e.target.value)} className="px-2 py-1 bg-gray-100 rounded text-sm">
                           <option value="">-- Vyber --</option>
-                          {couriers.map((c) => <option key={c.id} value={c.id}>{c.first_name} ({c.status})</option>)}
+                          {approvedCouriers.map((c) => <option key={c.id} value={c.id}>{c.first_name} ({c.status})</option>)}
                         </select>
                       )}
                     </td>
@@ -131,33 +162,63 @@ export default function AdminPage() {
             {orders.length === 0 && <p className="p-6 text-center text-gray-500">Ziadne objednavky</p>}
           </div>
         )}
+
         {activeTab === 'couriers' && (
-          <div className="bg-white rounded-xl overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-medium">Meno</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium">Email</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium">Telefon</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium">Vozidlo</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium">Status</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium">Hodnotenie</th>
-                </tr>
-              </thead>
-              <tbody>
-                {couriers.map((courier) => (
-                  <tr key={courier.id} className="border-t">
-                    <td className="px-6 py-4 text-sm font-medium">{courier.first_name} {courier.last_name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{courier.email}</td>
-                    <td className="px-6 py-4 text-sm">{courier.phone}</td>
-                    <td className="px-6 py-4 text-sm">{courier.vehicle_type}</td>
-                    <td className="px-6 py-4 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getCourierStatusColor(courier.status)}`}>{courier.status}</span></td>
-                    <td className="px-6 py-4 text-sm">{courier.rating} ⭐</td>
+          <div className="space-y-6">
+            {/* Pending approvals */}
+            {pendingCouriers.length > 0 && (
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
+                <h3 className="font-bold text-yellow-800 mb-4">Cakaju na schvalenie ({pendingCouriers.length})</h3>
+                <div className="space-y-3">
+                  {pendingCouriers.map((courier) => (
+                    <div key={courier.id} className="bg-white rounded-xl p-4 flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{courier.first_name} {courier.last_name}</p>
+                        <p className="text-sm text-gray-500">{courier.email} • {courier.phone}</p>
+                        <p className="text-sm text-gray-500">Vozidlo: {courier.vehicle_type}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => approveCourier(courier.id)} className="p-2 bg-green-100 text-green-600 hover:bg-green-200 rounded-lg" title="Schvalit">
+                          <CheckCircle className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => rejectCourier(courier.id)} className="p-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg" title="Zamietnut">
+                          <XCircle className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Approved couriers */}
+            <div className="bg-white rounded-xl overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-medium">Meno</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium">Email</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium">Telefon</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium">Vozidlo</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium">Status</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium">Hodnotenie</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {couriers.length === 0 && <p className="p-6 text-center text-gray-500">Ziadni kurieri</p>}
+                </thead>
+                <tbody>
+                  {approvedCouriers.map((courier) => (
+                    <tr key={courier.id} className="border-t">
+                      <td className="px-6 py-4 text-sm font-medium">{courier.first_name} {courier.last_name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{courier.email}</td>
+                      <td className="px-6 py-4 text-sm">{courier.phone}</td>
+                      <td className="px-6 py-4 text-sm">{courier.vehicle_type}</td>
+                      <td className="px-6 py-4 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getCourierStatusColor(courier.status)}`}>{courier.status}</span></td>
+                      <td className="px-6 py-4 text-sm">{courier.rating} ⭐</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {approvedCouriers.length === 0 && <p className="p-6 text-center text-gray-500">Ziadni schvaleni kurieri</p>}
+            </div>
           </div>
         )}
       </div>

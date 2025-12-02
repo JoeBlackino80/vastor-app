@@ -1,6 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { MapPin, Navigation, Play, Package, CheckCircle, LogIn } from 'lucide-react'
+import Link from 'next/link'
 
 export default function CourierPanel() {
   const [email, setEmail] = useState('')
@@ -31,6 +32,10 @@ export default function CourierPanel() {
       if (data.courier) {
         setCourier(data.courier)
         fetchMyOrders(data.courier.id)
+      } else if (data.message === 'pending_approval') {
+        setStatus('Tvoja registracia caka na schvalenie administratorom')
+      } else if (data.message === 'rejected') {
+        setStatus('Tvoja registracia bola zamietnuta')
       } else {
         setStatus('Kurier s tymto emailom neexistuje')
       }
@@ -111,10 +116,13 @@ export default function CourierPanel() {
             className="w-full px-4 py-3 bg-gray-100 rounded-xl mb-4" 
             onKeyDown={(e) => e.key === 'Enter' && login()} 
           />
-          {status && <p className="text-center text-sm mb-4 text-red-500">{status}</p>}
+          {status && <p className={`text-center text-sm mb-4 ${status.includes('caka') ? 'text-yellow-600' : 'text-red-500'}`}>{status}</p>}
           <button onClick={login} disabled={loading} className="w-full py-4 bg-black text-white rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
             <LogIn className="w-5 h-5" /> {loading ? 'Nacitavam...' : 'Prihlasit sa'}
           </button>
+          <p className="text-center text-gray-500 text-sm mt-6">
+            Nemas ucet? <Link href="/kuryr/registracia" className="text-black underline font-medium">Zaregistruj sa</Link>
+          </p>
         </div>
       </div>
     )
@@ -123,7 +131,6 @@ export default function CourierPanel() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-md mx-auto space-y-4">
-        {/* Header */}
         <div className="bg-white rounded-2xl p-6 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -137,7 +144,6 @@ export default function CourierPanel() {
           </div>
         </div>
 
-        {/* Moje objednavky */}
         <div className="bg-white rounded-2xl p-6 shadow-lg">
           <h2 className="font-bold mb-4">Moje objednavky ({orders.length})</h2>
           {orders.length === 0 ? (
@@ -152,7 +158,7 @@ export default function CourierPanel() {
                 >
                   <div className="flex justify-between items-start mb-2">
                     <p className="font-medium">{order.customer_name}</p>
-                    <span className={`px-2 py-1 rounded-full text-xs ${order.status === 'assigned' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>{order.status}</span>
+                    <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">{order.status}</span>
                   </div>
                   <p className="text-sm text-gray-500">📍 {order.pickup_address?.substring(0, 30)}...</p>
                   <p className="text-sm text-gray-500">🏠 {order.delivery_address?.substring(0, 30)}...</p>
@@ -163,7 +169,6 @@ export default function CourierPanel() {
           )}
         </div>
 
-        {/* Tracking panel */}
         {selectedOrder && (
           <div className="bg-white rounded-2xl p-6 shadow-lg">
             <h2 className="font-bold mb-4">Sledovanie polohy</h2>
@@ -185,7 +190,6 @@ export default function CourierPanel() {
           </div>
         )}
 
-        {/* Complete delivery */}
         {selectedOrder && (
           <div className="bg-white rounded-2xl p-6 shadow-lg">
             <h2 className="font-bold mb-4 flex items-center gap-2"><CheckCircle className="w-5 h-5" /> Dokoncit dorucenie</h2>

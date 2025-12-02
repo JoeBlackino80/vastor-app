@@ -15,7 +15,16 @@ export async function GET(request: Request) {
     .single()
 
   if (error || !courier) {
-    return NextResponse.json({ courier: null })
+    return NextResponse.json({ courier: null, message: 'not_found' })
+  }
+
+  // Check if approved
+  if (courier.status === 'pending') {
+    return NextResponse.json({ courier: null, message: 'pending_approval' })
+  }
+
+  if (courier.status === 'rejected') {
+    return NextResponse.json({ courier: null, message: 'rejected' })
   }
 
   return NextResponse.json({ courier })
