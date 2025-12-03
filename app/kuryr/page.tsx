@@ -1,18 +1,18 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Navigation, Mail, Lock, AlertCircle, Package, MapPin, Play, CheckCircle, LogOut } from 'lucide-react'
+import { Navigation, Mail, Lock, AlertCircle, Package, MapPin, CheckCircle, LogOut, Power } from 'lucide-react'
 
 export default function CourierPage() {
   const router = useRouter()
   const [courier, setCourier] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
-  const [isTracking, setIsTracking] = useState(false)
-  const [watchId, setWatchId] = useState<number | null>(null)
+  const [isOnline, setIsOnline] = useState(false)
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null)
+  const watchIdRef = useRef<number | null>(null)
   
-  // Login state
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -23,14 +23,76 @@ export default function CourierPage() {
     if (saved) {
       const c = JSON.parse(saved)
       setCourier(c)
+      setIsOnline(c.is_online || false)
       fetchOrders(c.id)
     }
   }, [])
+
+  // Auto-start tracking when online
+  useEffect(() => {
+    if (isOnline && courier) {
+      startTracking()
+    } else {
+      stopTracking()
+    }
+    return () => stopTracking()
+  }, [isOnline, courier])
 
   const fetchOrders = async (courierId: string) => {
     const res = await fetch('/api/courier-orders?courier_id=' + courierId)
     const data = await res.json()
     setOrders(data.orders || [])
+  }
+
+  const startTracking = () => {
+    if (!navigator.geolocation || !courier) return
+    
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+        setCurrentLocation({ lat: latitude, lng: longitude })
+        
+        // Update courier location
+        await fetch('/api/courier-location', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            courier_id: courier.id,
+            latitude,
+            longitude
+          })
+        })
+      },
+      (error) => console.error('GPS error:', error),
+      { enableHighAccuracy: true, maximumAge: 5000 }
+    )
+  }
+
+  const stopTracking = () => {
+    if (watchIdRef.current) {
+      navigator.geolocation.clearWatch(watchIdRef.current)
+      watchIdRef.current = null
+    }
+  }
+
+  const toggleOnline = async () => {
+    const newStatus = !isOnline
+    setIsOnline(newStatus)
+    
+    await fetch('/api/courier-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        courier_id: courier.id,
+        is_online: newStatus,
+        status: newStatus ? 'available' : 'offline'
+      })
+    })
+    
+    // Update local storage
+    const updated = { ...courier, is_online: newStatus }
+    localStorage.setItem('courier', JSON.stringify(updated))
+    setCourier(updated)
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -63,57 +125,28 @@ export default function CourierPage() {
     }
   }
 
-  const logout = () => {
+  const logout = async () => {
+    if (courier) {
+      await fetch('/api/courier-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courier_id: courier.id, is_online: false, status: 'offline' })
+      })
+    }
+    stopTracking()
     localStorage.removeItem('courier')
     setCourier(null)
     setOrders([])
-  }
-
-  const startTracking = () => {
-    if (!selectedOrder || !courier) return
-    if (!navigator.geolocation) {
-      alert('GPS nie je podporované')
-      return
-    }
-
-    setIsTracking(true)
-    const id = navigator.geolocation.watchPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords
-        await fetch('/api/location', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            courier_id: courier.id,
-            order_id: selectedOrder.id,
-            latitude,
-            longitude
-          })
-        })
-      },
-      (error) => console.error('GPS error:', error),
-      { enableHighAccuracy: true }
-    )
-    setWatchId(id)
-  }
-
-  const stopTracking = () => {
-    if (watchId) navigator.geolocation.clearWatch(watchId)
-    setIsTracking(false)
-    setWatchId(null)
+    setIsOnline(false)
   }
 
   const completeDelivery = async () => {
     if (!selectedOrder || !courier) return
-    stopTracking()
     
     await fetch('/api/complete-delivery', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        order_id: selectedOrder.id,
-        courier_id: courier.id
-      })
+      body: JSON.stringify({ order_id: selectedOrder.id, courier_id: courier.id })
     })
     
     setSelectedOrder(null)
@@ -121,7 +154,6 @@ export default function CourierPage() {
     alert('Doručenie dokončené!')
   }
 
-  // Login screen
   if (!courier) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
@@ -158,7 +190,6 @@ export default function CourierPage() {
     )
   }
 
-  // Courier panel
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="bg-black text-white p-4">
@@ -178,13 +209,42 @@ export default function CourierPage() {
       </div>
 
       <div className="p-4 space-y-4">
+        {/* Online/Offline Toggle */}
+        <div className={`rounded-2xl p-4 shadow-sm ${isOnline ? 'bg-green-500 text-white' : 'bg-white'}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Power className="w-6 h-6" />
+              <div>
+                <p className="font-bold">{isOnline ? 'Si online' : 'Si offline'}</p>
+                <p className={`text-sm ${isOnline ? 'text-green-100' : 'text-gray-500'}`}>
+                  {isOnline ? 'Prijímaš objednávky' : 'Neprijímaš objednávky'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={toggleOnline}
+              className={`px-6 py-2 rounded-xl font-semibold ${isOnline ? 'bg-white text-green-600' : 'bg-black text-white'}`}
+            >
+              {isOnline ? 'Vypnúť' : 'Zapnúť'}
+            </button>
+          </div>
+          {isOnline && currentLocation && (
+            <p className="text-xs text-green-100 mt-2">
+              📍 GPS: {currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}
+            </p>
+          )}
+        </div>
+
+        {/* Orders */}
         <h2 className="font-bold text-lg">Aktívne objednávky ({orders.length})</h2>
 
         {orders.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
             <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500">Žiadne aktívne objednávky</p>
-            <p className="text-sm text-gray-400 mt-2">Počkaj na priradenie novej objednávky</p>
+            <p className="text-sm text-gray-400 mt-2">
+              {isOnline ? 'Čakám na novú objednávku...' : 'Zapni sa online pre prijímanie objednávok'}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -217,24 +277,9 @@ export default function CourierPage() {
         )}
 
         {selectedOrder && (
-          <div className="space-y-3">
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
-              <h3 className="font-bold mb-3">GPS Sledovanie</h3>
-              {!isTracking ? (
-                <button onClick={startTracking} className="w-full py-4 bg-black text-white rounded-xl font-semibold flex items-center justify-center gap-2">
-                  <Play className="w-5 h-5" /> Spustiť sledovanie
-                </button>
-              ) : (
-                <button onClick={stopTracking} className="w-full py-4 bg-gray-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2">
-                  <MapPin className="w-5 h-5" /> Zastaviť sledovanie
-                </button>
-              )}
-            </div>
-
-            <button onClick={completeDelivery} className="w-full py-4 bg-green-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2">
-              <CheckCircle className="w-5 h-5" /> Doručenie dokončené
-            </button>
-          </div>
+          <button onClick={completeDelivery} className="w-full py-4 bg-green-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2">
+            <CheckCircle className="w-5 h-5" /> Doručenie dokončené
+          </button>
         )}
       </div>
     </div>
