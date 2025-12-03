@@ -1,268 +1,93 @@
 import Link from 'next/link'
-import Navigation from '@/components/Navigation'
-import Footer from '@/components/Footer'
-import { FileText, Package, ShoppingCart, Zap, MapPin, Clock, Check } from 'lucide-react'
+import { Package, Truck, Clock, Shield, ArrowRight, Phone, Mail } from 'lucide-react'
 
 export default function Home() {
   return (
-    <>
-      <Navigation />
-      
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="text-2xl font-bold">VASTOR</Link>
+          <div className="flex items-center gap-4">
+            <Link href="/moje-objednavky" className="text-gray-600 hover:text-black">Moje objednávky</Link>
+            <Link href="/kuryr" className="text-gray-600 hover:text-black">Pre kuriérov</Link>
+            <Link href="/objednavka" className="px-4 py-2 bg-black text-white rounded-full text-sm font-medium">
+              Objednať
+            </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero */}
-      <section className="min-h-screen flex items-center pt-40 pb-24">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-12">
-          <div className="grid md:grid-cols-2 gap-20 items-center">
-            <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-sm text-gray-600 font-medium mb-8">
-                <span className="w-1.5 h-1.5 bg-black rounded-full"></span>
-                Aktivní po celé Praze
-              </div>
-              
-              <h1 className="text-5xl md:text-6xl font-extrabold leading-tight tracking-tight mb-7">
-                Doručíme cokoliv. Kamkoliv. Rychle.
-              </h1>
-              
-              <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-                Profesionální kurýrní služba pro Prahu. Dokumenty, balíky, nákupy, vzorky. Od odeslání po doručení do 60 minut.
-              </p>
-              
-              <div className="flex flex-wrap gap-4 mb-16">
-                <Link href="/objednavka" className="btn btn-primary">
-                  Objednat kurýra
-                </Link>
-                <Link href="#cenik" className="btn btn-secondary">
-                  Zobrazit ceník
-                </Link>
-              </div>
-              
-              <div className="flex flex-wrap gap-12 pt-12 border-t border-gray-200">
-                <div>
-                  <div className="text-4xl font-extrabold tracking-tight">60min</div>
-                  <div className="text-sm text-gray-500 mt-1">Průměrný čas doručení</div>
-                </div>
-                <div>
-                  <div className="text-4xl font-extrabold tracking-tight">15K+</div>
-                  <div className="text-sm text-gray-500 mt-1">Doručených zásilek</div>
-                </div>
-                <div>
-                  <div className="text-4xl font-extrabold tracking-tight">99.2%</div>
-                  <div className="text-sm text-gray-500 mt-1">Úspěšnost doručení</div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="relative h-[500px] bg-gray-100 flex items-center justify-center">
-              <div className="text-center p-12">
-                <div className="w-20 h-20 bg-black mx-auto mb-8 flex items-center justify-center">
-                  <MapPin className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold mb-3 tracking-tight">Sledování v reálném čase</h3>
-                <p className="text-gray-600">Víte přesně, kde je váš kurýr</p>
-              </div>
-              
-              <div className="absolute top-16 -right-8 bg-white p-5 shadow-xl border border-gray-200">
-                <div className="text-sm font-bold mb-1">Čas doručení</div>
-                <div className="text-2xl font-extrabold">47 min</div>
-              </div>
-              
-              <div className="absolute bottom-20 -left-8 bg-white p-5 shadow-xl border border-gray-200">
-                <div className="text-sm font-bold mb-1">Status</div>
-                <div className="text-sm text-gray-600">Kurýr vyzvedl zásilku</div>
-              </div>
-            </div>
-          </div>
+      <section className="pt-32 pb-20 px-6">
+        <div className="max-w-6xl mx-auto text-center">
+          <h1 className="text-6xl font-bold mb-6">Doručíme čokoľvek.<br/>Kdekoľvek.</h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Rýchle a spoľahlivé kuriérske služby pre vašu firmu aj domácnosť.
+          </p>
+          <Link href="/objednavka" className="inline-flex items-center gap-2 px-8 py-4 bg-black text-white rounded-full text-lg font-medium hover:bg-gray-800 transition-colors">
+            Vytvoriť objednávku <ArrowRight className="w-5 h-5" />
+          </Link>
         </div>
       </section>
 
-      {/* Services */}
-      <section id="sluzby" className="py-32 bg-gray-100">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-12">
-          <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-white text-xs text-gray-600 font-semibold uppercase tracking-widest mb-5">
-              Služby
-            </span>
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">Co pro vás doručíme</h2>
-            <p className="text-lg text-gray-600 max-w-xl mx-auto">
-              Specializujeme se na rychlé a spolehlivé doručení různých typů zásilek po celé Praze.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="card hover:border-black transition-colors">
-              <div className="w-14 h-14 bg-black flex items-center justify-center mb-7">
-                <FileText className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight">Dokumenty</h3>
-              <p className="text-gray-600">Smlouvy, faktury, právní dokumenty. Bezpečné a rychlé doručení s potvrzením převzetí.</p>
+      {/* Features */}
+      <section className="py-20 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">Prečo VASTOR?</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white p-8 rounded-2xl shadow-sm">
+              <Clock className="w-10 h-10 mb-4" />
+              <h3 className="text-xl font-bold mb-2">Rýchle doručenie</h3>
+              <p className="text-gray-600">Express doručenie do 2 hodín alebo štandardné do konca dňa.</p>
             </div>
-            
-            <div className="card hover:border-black transition-colors">
-              <div className="w-14 h-14 bg-black flex items-center justify-center mb-7">
-                <Package className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight">Balíky</h3>
-              <p className="text-gray-600">Malé i větší balíky do 20 kg. E-commerce, B2B zásilky, osobní balíky.</p>
+            <div className="bg-white p-8 rounded-2xl shadow-sm">
+              <Shield className="w-10 h-10 mb-4" />
+              <h3 className="text-xl font-bold mb-2">Bezpečné</h3>
+              <p className="text-gray-600">Všetky zásielky sú poistené a sledované v reálnom čase.</p>
             </div>
-            
-            <div className="card hover:border-black transition-colors">
-              <div className="w-14 h-14 bg-black flex items-center justify-center mb-7">
-                <ShoppingCart className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight">Nákupy</h3>
-              <p className="text-gray-600">Vyzvedneme a doručíme vaše nákupy z obchodů, lékáren nebo e-shopů.</p>
-            </div>
-            
-            <div className="card hover:border-black transition-colors">
-              <div className="w-14 h-14 bg-black flex items-center justify-center mb-7">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight">Express</h3>
-              <p className="text-gray-600">Laboratorní vzorky, urgentní dokumenty. Garantovaný čas doručení.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="py-32">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-12">
-          <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-gray-100 text-xs text-gray-600 font-semibold uppercase tracking-widest mb-5">
-              Proces
-            </span>
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">Jak to funguje</h2>
-            <p className="text-lg text-gray-600 max-w-xl mx-auto">
-              Objednání kurýra je jednoduché. Tři kroky a vaše zásilka je na cestě.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-12">
-            <div>
-              <div className="text-8xl font-black text-gray-200 leading-none mb-6">01</div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight">Zadejte objednávku</h3>
-              <p className="text-gray-600 leading-relaxed">Vyplňte adresu vyzvednutí a doručení. Zvolte typ zásilky a preferovaný čas.</p>
-            </div>
-            
-            <div>
-              <div className="text-8xl font-black text-gray-200 leading-none mb-6">02</div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight">Kurýr vyzvedne zásilku</h3>
-              <p className="text-gray-600 leading-relaxed">Nejbližší dostupný kurýr přijede na místo vyzvednutí. Sledujte jeho polohu v reálném čase.</p>
-            </div>
-            
-            <div>
-              <div className="text-8xl font-black text-gray-200 leading-none mb-6">03</div>
-              <h3 className="text-xl font-bold mb-3 tracking-tight">Doručení příjemci</h3>
-              <p className="text-gray-600 leading-relaxed">Zásilka je doručena na cílovou adresu. Obdržíte potvrzení o převzetí.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="cenik" className="py-32 bg-black text-white">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-12">
-          <div className="text-center mb-16">
-            <span className="inline-block px-4 py-2 bg-gray-800 text-xs text-gray-400 font-semibold uppercase tracking-widest mb-5">
-              Ceník
-            </span>
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">Transparentní ceny</h2>
-            <p className="text-lg text-gray-400 max-w-xl mx-auto">
-              Žádné skryté poplatky. Platíte pouze za vzdálenost a typ služby.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="bg-gray-900 border border-gray-800 p-10 hover:border-gray-600 transition-colors">
-              <div className="text-sm font-semibold uppercase tracking-widest text-gray-400 mb-4">Standard</div>
-              <div className="text-5xl font-extrabold tracking-tight mb-2">89 Kč</div>
-              <p className="text-gray-500 mb-8 pb-8 border-b border-gray-800">Doručení do 90 minut</p>
-              <ul className="space-y-4 mb-10">
-                <li className="flex items-center gap-3 text-gray-400">
-                  <Check className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                  Dokumenty a malé balíky
-                </li>
-                <li className="flex items-center gap-3 text-gray-400">
-                  <Check className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                  Sledování v reálném čase
-                </li>
-                <li className="flex items-center gap-3 text-gray-400">
-                  <Check className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                  Do 5 km v ceně
-                </li>
-              </ul>
-              <Link href="/objednavka?service=standard" className="btn bg-white text-black hover:bg-gray-200 w-full justify-center">
-                Vybrat
-              </Link>
-            </div>
-            
-            <div className="bg-white text-black p-10">
-              <div className="text-sm font-semibold uppercase tracking-widest text-gray-600 mb-4">Express</div>
-              <div className="text-5xl font-extrabold tracking-tight mb-2">149 Kč</div>
-              <p className="text-gray-600 mb-8 pb-8 border-b border-gray-200">Doručení do 60 minut</p>
-              <ul className="space-y-4 mb-10">
-                <li className="flex items-center gap-3 text-gray-600">
-                  <Check className="w-5 h-5 text-black flex-shrink-0" />
-                  Prioritní přiřazení kurýra
-                </li>
-                <li className="flex items-center gap-3 text-gray-600">
-                  <Check className="w-5 h-5 text-black flex-shrink-0" />
-                  Balíky do 10 kg
-                </li>
-                <li className="flex items-center gap-3 text-gray-600">
-                  <Check className="w-5 h-5 text-black flex-shrink-0" />
-                  Do 10 km v ceně
-                </li>
-              </ul>
-              <Link href="/objednavka?service=express" className="btn btn-primary w-full justify-center">
-                Vybrat
-              </Link>
-            </div>
-            
-            <div className="bg-gray-900 border border-gray-800 p-10 hover:border-gray-600 transition-colors">
-              <div className="text-sm font-semibold uppercase tracking-widest text-gray-400 mb-4">Premium</div>
-              <div className="text-5xl font-extrabold tracking-tight mb-2">249 Kč</div>
-              <p className="text-gray-500 mb-8 pb-8 border-b border-gray-800">Doručení do 45 minut</p>
-              <ul className="space-y-4 mb-10">
-                <li className="flex items-center gap-3 text-gray-400">
-                  <Check className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                  Garantovaný čas
-                </li>
-                <li className="flex items-center gap-3 text-gray-400">
-                  <Check className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                  Balíky do 20 kg
-                </li>
-                <li className="flex items-center gap-3 text-gray-400">
-                  <Check className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                  Celá Praha v ceně
-                </li>
-              </ul>
-              <Link href="/objednavka?service=premium" className="btn bg-white text-black hover:bg-gray-200 w-full justify-center">
-                Vybrat
-              </Link>
+            <div className="bg-white p-8 rounded-2xl shadow-sm">
+              <Truck className="w-10 h-10 mb-4" />
+              <h3 className="text-xl font-bold mb-2">Profesionálni kuriéri</h3>
+              <p className="text-gray-600">Overení a vyškolení kuriéri s vysokým hodnotením.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-28 bg-gray-100">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-12 text-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">Potřebujete něco doručit?</h2>
-          <p className="text-lg text-gray-600 mb-12 max-w-lg mx-auto">
-            Objednejte kurýra online nebo nám zavolejte. Jsme tu pro vás každý den.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/objednavka" className="btn btn-primary">
-              Objednat kurýra
-            </Link>
-            <Link href="/kuryr" className="btn btn-secondary">
-              Chci být kurýr
-            </Link>
-          </div>
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-6">Staň sa kuriérom</h2>
+          <p className="text-gray-600 mb-8">Zarábaj flexibilne, pracuj kedy chceš. Pridaj sa k tímu VASTOR.</p>
+          <Link href="/kuryr/registracia" className="inline-flex items-center gap-2 px-8 py-4 border-2 border-black rounded-full text-lg font-medium hover:bg-black hover:text-white transition-colors">
+            Registrovať sa ako kuriér <ArrowRight className="w-5 h-5" />
+          </Link>
         </div>
       </section>
 
-      <Footer />
-    </>
+      {/* Footer */}
+      <footer className="bg-black text-white py-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+              <h3 className="text-2xl font-bold mb-2">VASTOR</h3>
+              <p className="text-gray-400">Kuriérske služby novej generácie</p>
+            </div>
+            <div className="flex items-center gap-6">
+              <a href="tel:+421900000000" className="flex items-center gap-2 text-gray-400 hover:text-white">
+                <Phone className="w-5 h-5" /> +421 900 000 000
+              </a>
+              <a href="mailto:info@vastor.sk" className="flex items-center gap-2 text-gray-400 hover:text-white">
+                <Mail className="w-5 h-5" /> info@vastor.sk
+              </a>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
+            © 2024 VASTOR. Všetky práva vyhradené.
+          </div>
+        </div>
+      </footer>
+    </div>
   )
 }

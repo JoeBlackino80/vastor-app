@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
+import BackButton from '@/components/BackButton'
 import { MapPin, RefreshCw, Navigation } from 'lucide-react'
 
 export default function TrackingPage() {
@@ -13,7 +15,6 @@ export default function TrackingPage() {
 
   const fetchData = async () => {
     try {
-      // Fetch location
       const locRes = await fetch('/api/location?order_id=' + orderId)
       const locData = await locRes.json()
       if (locData.location) {
@@ -21,7 +22,6 @@ export default function TrackingPage() {
         setLastUpdate(new Date(locData.location.updated_at).toLocaleTimeString())
       }
 
-      // Fetch order details
       const orderRes = await fetch('/api/orders')
       const orderData = await orderRes.json()
       const foundOrder = orderData.orders?.find((o: any) => o.id === orderId)
@@ -51,6 +51,7 @@ export default function TrackingPage() {
     <div className="min-h-screen bg-gray-100">
       <div className="bg-black text-white p-4">
         <div className="flex items-center gap-3">
+          <BackButton className="text-white hover:bg-white/20" />
           <Navigation className="w-6 h-6" />
           <div>
             <h1 className="font-bold">Sledovanie zásielky</h1>
