@@ -1,72 +1,96 @@
+'use client'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Package, Truck, Clock, Shield, ArrowRight, Phone, Mail } from 'lucide-react'
+import { Package, Clock, MapPin, Shield, ArrowRight, Phone, Mail, User } from 'lucide-react'
 
 export default function Home() {
+  const [customer, setCustomer] = useState<any>(null)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('customer')
+    if (saved) setCustomer(JSON.parse(saved))
+  }, [])
+
+  const displayName = customer?.account_type === 'company' ? customer?.company_name : customer?.first_name
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold">VASTOR</Link>
           <div className="flex items-center gap-4">
-            <Link href="/moje-objednavky" className="text-gray-600 hover:text-black">Moje objednávky</Link>
-            <Link href="/kuryr" className="text-gray-600 hover:text-black">Pre kuriérov</Link>
-            <Link href="/objednavka" className="px-4 py-2 bg-black text-white rounded-full text-sm font-medium">
-              Objednať
-            </Link>
+            {customer ? (
+              <>
+                <Link href="/moj-ucet" className="flex items-center gap-2 text-gray-700 hover:text-black">
+                  <User className="w-5 h-5" />
+                  <span className="hidden sm:inline">{displayName}</span>
+                </Link>
+                <Link href="/objednavka" className="px-6 py-2 bg-black text-white rounded-full text-sm font-medium">
+                  Objednať
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/prihlasenie" className="text-gray-700 hover:text-black">Prihlásiť</Link>
+                <Link href="/registracia" className="px-6 py-2 bg-black text-white rounded-full text-sm font-medium">
+                  Registrácia
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
       <section className="pt-32 pb-20 px-6">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-6xl font-bold mb-6">Doručíme čokoľvek.<br/>Kdekoľvek.</h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Rýchle a spoľahlivé kuriérske služby pre vašu firmu aj domácnosť.
-          </p>
-          <Link href="/objednavka" className="inline-flex items-center gap-2 px-8 py-4 bg-black text-white rounded-full text-lg font-medium hover:bg-gray-800 transition-colors">
-            Vytvoriť objednávku <ArrowRight className="w-5 h-5" />
-          </Link>
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6">Doručíme čokoľvek, kamkoľvek</h1>
+          <p className="text-xl text-gray-600 mb-8">Rýchle a spoľahlivé kuriérske služby pre váš biznis aj súkromné potreby.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/objednavka" className="px-8 py-4 bg-black text-white rounded-full text-lg font-medium flex items-center justify-center gap-2">
+              Objednať kuriéra <ArrowRight className="w-5 h-5" />
+            </Link>
+            {!customer && (
+              <Link href="/registracia" className="px-8 py-4 border-2 border-black rounded-full text-lg font-medium">
+                Registrovať sa
+              </Link>
+            )}
+          </div>
         </div>
       </section>
 
-      {/* Features */}
       <section className="py-20 px-6 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Prečo VASTOR?</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white p-8 rounded-2xl shadow-sm">
-              <Clock className="w-10 h-10 mb-4" />
+              <Clock className="w-12 h-12 mb-4" />
               <h3 className="text-xl font-bold mb-2">Rýchle doručenie</h3>
-              <p className="text-gray-600">Express doručenie do 2 hodín alebo štandardné do konca dňa.</p>
+              <p className="text-gray-600">Doručenie do 60 minút v rámci mesta.</p>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-sm">
-              <Shield className="w-10 h-10 mb-4" />
-              <h3 className="text-xl font-bold mb-2">Bezpečné</h3>
-              <p className="text-gray-600">Všetky zásielky sú poistené a sledované v reálnom čase.</p>
+              <MapPin className="w-12 h-12 mb-4" />
+              <h3 className="text-xl font-bold mb-2">Live tracking</h3>
+              <p className="text-gray-600">Sledujte kuriéra v reálnom čase.</p>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-sm">
-              <Truck className="w-10 h-10 mb-4" />
-              <h3 className="text-xl font-bold mb-2">Profesionálni kuriéri</h3>
-              <p className="text-gray-600">Overení a vyškolení kuriéri s vysokým hodnotením.</p>
+              <Shield className="w-12 h-12 mb-4" />
+              <h3 className="text-xl font-bold mb-2">Poistenie zásielky</h3>
+              <p className="text-gray-600">Každá zásielka je automaticky poistená.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6">Staň sa kuriérom</h2>
-          <p className="text-gray-600 mb-8">Zarábaj flexibilne, pracuj kedy chceš. Pridaj sa k tímu VASTOR.</p>
+          <p className="text-gray-600 mb-8">Zarábaj flexibilne, pracuj kedy chceš.</p>
           <Link href="/kuryr/registracia" className="inline-flex items-center gap-2 px-8 py-4 border-2 border-black rounded-full text-lg font-medium hover:bg-black hover:text-white transition-colors">
             Registrovať sa ako kuriér <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="bg-black text-white py-12 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
