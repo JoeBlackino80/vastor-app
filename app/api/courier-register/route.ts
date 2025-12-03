@@ -6,9 +6,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    console.log('Registration attempt:', body.email)
-
-    // Check if email exists
     const { data: existing } = await (supabase.from('couriers') as any)
       .select('id')
       .eq('email', body.email.toLowerCase().trim())
@@ -18,7 +15,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email uz existuje' }, { status: 400 })
     }
 
-    // Hash password
     const password_hash = await bcrypt.hash(body.password, 10)
 
     const { data: courier, error } = await (supabase.from('couriers') as any)
@@ -41,7 +37,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log('Registration successful:', courier.email)
     return NextResponse.json({ success: true, courier })
   } catch (error) {
     console.error('Registration error:', error)
