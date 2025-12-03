@@ -28,7 +28,7 @@ export default function Home() {
             <a href="#sluzby" className="text-gray-600 hover:text-black">Služby</a>
             <a href="#cenik" className="text-gray-600 hover:text-black">Ceník</a>
             <Link href="/kuryr" className="text-gray-600 hover:text-black">Pro kurýry</Link>
-            <Link href="/mal/admin" className="text-gray-600 hover:text-black">Admin</Link>
+            
           </div>
           <div className="flex items-center gap-4">
             {customer ? (

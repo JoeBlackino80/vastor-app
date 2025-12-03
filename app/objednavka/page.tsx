@@ -1,12 +1,13 @@
 'use client'
-import { useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import BackButton from '@/components/BackButton'
-import { Package, FileText, Zap, Crown, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Package, FileText, ShoppingBag, MapPin, Clock, Crown, CheckCircle } from 'lucide-react'
 
 function OrderForm() {
+  const router = useRouter()
   const searchParams = useSearchParams()
+  const [customer, setCustomer] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [finalPrice, setFinalPrice] = useState(0)
@@ -20,24 +21,32 @@ function OrderForm() {
     pickup_notes: '',
     delivery_address: '',
     delivery_notes: '',
-    package_type: 'small',
+    package_type: 'document',
     service_type: 'standard'
   })
 
-  const getPrice = () => {
-    let base = formData.service_type === 'express' ? 149 : formData.service_type === 'premium' ? 249 : 89
-    if (formData.package_type === 'medium') base += 20
-    if (formData.package_type === 'large') base += 50
-    return base
-  }
+  useEffect(() => {
+    const saved = localStorage.getItem('customer')
+    if (saved) {
+      const c = JSON.parse(saved)
+      setCustomer(c)
+      setFormData(prev => ({
+        ...prev,
+        customer_name: c.account_type === 'company' ? c.company_name : `${c.first_name} ${c.last_name}`,
+        customer_email: c.email,
+        customer_phone: c.phone || '',
+        pickup_address: c.street ? `${c.street}, ${c.postal_code} ${c.city}` : ''
+      }))
+    }
+  }, [])
 
-  const price = getPrice()
+  const prices: Record<string, number> = { standard: 4.90, express: 7.90, premium: 12.90 }
+  const price = prices[formData.service_type] || 4.90
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setError('')
-
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -57,23 +66,20 @@ function OrderForm() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="p-4">
-          <Link href="/" className="text-2xl font-bold">VASTOR</Link>
-        </div>
-        <div className="pt-20 pb-20 px-6">
-          <div className="max-w-lg mx-auto text-center">
-            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-8">
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-lg mx-auto p-6 pt-12">
+          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-4xl font-bold mb-4">Objednávka prijatá!</h1>
-            <p className="text-gray-600 mb-8">Kuriér bude priradený čoskoro. Sledujte email pre tracking link.</p>
-            <div className="bg-gray-100 rounded-2xl p-6 mb-8">
-              <p className="text-gray-500 text-sm mb-2">Celková cena</p>
-              <p className="text-4xl font-bold">{finalPrice} Kč</p>
+            <h1 className="text-2xl font-bold mb-2">Objednávka prijatá!</h1>
+            <p className="text-gray-600 mb-6">Kuriér bude priradený čo najskôr. Informácie o stave doručenia obdržíte emailom.</p>
+            <div className="bg-gray-100 rounded-xl p-4 mb-6">
+              <p className="text-gray-500 text-sm">Celková cena</p>
+              <p className="text-3xl font-bold">{finalPrice.toFixed(2)} €</p>
             </div>
-            <Link href="/" className="inline-block px-8 py-4 bg-black text-white rounded-full font-medium">
-              Späť na úvod
+            <Link href="/" className="block w-full py-4 bg-black text-white rounded-xl font-semibold">
+              Späť na hlavnú stránku
             </Link>
           </div>
         </div>
@@ -82,67 +88,80 @@ function OrderForm() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="p-4 flex items-center gap-4 border-b">
-        <BackButton />
-        <Link href="/" className="text-2xl font-bold">VASTOR</Link>
-      </div>
-
-      <div className="max-w-2xl mx-auto px-6 py-8">
-        <h1 className="text-3xl font-bold mb-8">Nová objednávka</h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-2xl mx-auto p-6">
+        <button onClick={() => router.back()} className="p-2 hover:bg-gray-200 rounded-full mb-4">
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-2xl font-bold mb-6">Nová objednávka</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Kontakt */}
-          <div className="space-y-4">
-            <h2 className="font-bold text-lg">Kontaktné údaje</h2>
-            <input type="text" placeholder="Meno a priezvisko" value={formData.customer_name} onChange={(e) => setFormData({...formData, customer_name: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" required />
-            <input type="email" placeholder="Email" value={formData.customer_email} onChange={(e) => setFormData({...formData, customer_email: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" required />
-            <input type="tel" placeholder="Telefón" value={formData.customer_phone} onChange={(e) => setFormData({...formData, customer_phone: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" required />
+          {/* Kontaktné údaje */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 className="font-bold mb-4">Kontaktné údaje</h2>
+            <div className="space-y-4">
+              <input type="text" placeholder="Meno a priezvisko *" value={formData.customer_name} onChange={e => setFormData({...formData, customer_name: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" required />
+              <input type="email" placeholder="Email *" value={formData.customer_email} onChange={e => setFormData({...formData, customer_email: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" required />
+              <input type="tel" placeholder="Telefón *" value={formData.customer_phone} onChange={e => setFormData({...formData, customer_phone: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" required />
+            </div>
           </div>
 
           {/* Adresy */}
-          <div className="space-y-4">
-            <h2 className="font-bold text-lg">Vyzdvihnutie</h2>
-            <input type="text" placeholder="Adresa vyzdvihnutia" value={formData.pickup_address} onChange={(e) => setFormData({...formData, pickup_address: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" required />
-            <input type="text" placeholder="Poznámka (voliteľné)" value={formData.pickup_notes} onChange={(e) => setFormData({...formData, pickup_notes: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" />
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 className="font-bold mb-4">Adresy</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">Adresa vyzdvihnutia *</label>
+                <input type="text" placeholder="Ulica, číslo, mesto" value={formData.pickup_address} onChange={e => setFormData({...formData, pickup_address: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" required />
+                <input type="text" placeholder="Poznámka (voliteľné)" value={formData.pickup_notes} onChange={e => setFormData({...formData, pickup_notes: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl mt-2" />
+              </div>
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">Adresa doručenia *</label>
+                <input type="text" placeholder="Ulica, číslo, mesto" value={formData.delivery_address} onChange={e => setFormData({...formData, delivery_address: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" required />
+                <input type="text" placeholder="Poznámka (voliteľné)" value={formData.delivery_notes} onChange={e => setFormData({...formData, delivery_notes: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl mt-2" />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <h2 className="font-bold text-lg">Doručenie</h2>
-            <input type="text" placeholder="Adresa doručenia" value={formData.delivery_address} onChange={(e) => setFormData({...formData, delivery_address: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" required />
-            <input type="text" placeholder="Poznámka (voliteľné)" value={formData.delivery_notes} onChange={(e) => setFormData({...formData, delivery_notes: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" />
-          </div>
-
-          {/* Balík */}
-          <div className="space-y-4">
-            <h2 className="font-bold text-lg">Veľkosť balíka</h2>
+          {/* Typ zásielky */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 className="font-bold mb-4">Typ zásielky</h2>
             <div className="grid grid-cols-3 gap-3">
-              {[{id:'small',name:'Malý',desc:'Do 5kg'},{id:'medium',name:'Stredný',desc:'5-15kg'},{id:'large',name:'Veľký',desc:'15-30kg'}].map(p => (
-                <button key={p.id} type="button" onClick={() => setFormData({...formData, package_type: p.id})} className={`p-4 rounded-xl border-2 text-center ${formData.package_type === p.id ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
-                  <Package className="w-6 h-6 mx-auto mb-2" />
-                  <p className="font-medium">{p.name}</p>
-                  <p className="text-xs text-gray-500">{p.desc}</p>
+              {[
+                { id: 'document', icon: FileText, label: 'Dokument' },
+                { id: 'package', icon: Package, label: 'Balík' },
+                { id: 'other', icon: ShoppingBag, label: 'Iné' }
+              ].map(type => (
+                <button key={type.id} type="button" onClick={() => setFormData({...formData, package_type: type.id})}
+                  className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 ${formData.package_type === type.id ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
+                  <type.icon className="w-6 h-6" />
+                  <span className="text-sm">{type.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Služba */}
-          <div className="space-y-4">
-            <h2 className="font-bold text-lg">Typ služby</h2>
+          {/* Typ služby */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 className="font-bold mb-4">Rýchlosť doručenia</h2>
             <div className="space-y-3">
-              <button type="button" onClick={() => setFormData({...formData, service_type: 'standard'})} className={`w-full p-4 rounded-xl border-2 flex justify-between items-center ${formData.service_type === 'standard' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
-                <div className="flex items-center gap-3"><FileText className="w-6 h-6" /><div className="text-left"><p className="font-medium">Štandard</p><p className="text-sm text-gray-500">Do konca dňa</p></div></div>
-                <p className="font-semibold">89 Kč</p>
-              </button>
-              <button type="button" onClick={() => setFormData({...formData, service_type: 'express'})} className={`w-full p-4 rounded-xl border-2 flex justify-between items-center ${formData.service_type === 'express' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
-                <div className="flex items-center gap-3"><Zap className="w-6 h-6" /><div className="text-left"><p className="font-medium">Express</p><p className="text-sm text-gray-500">Do 2 hodín</p></div></div>
-                <p className="font-semibold">149 Kč</p>
-              </button>
-              <button type="button" onClick={() => setFormData({...formData, service_type: 'premium'})} className={`w-full p-4 rounded-xl border-2 flex justify-between items-center ${formData.service_type === 'premium' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
-                <div className="flex items-center gap-3"><Crown className="w-6 h-6" /><div className="text-left"><p className="font-medium">Premium</p><p className="text-sm text-gray-500">Do 45 minút</p></div></div>
-                <p className="font-semibold">249 Kč</p>
-              </button>
+              {[
+                { id: 'standard', icon: Clock, label: 'Štandard', desc: 'Do 120 minút', price: '4,90 €' },
+                { id: 'express', icon: MapPin, label: 'Express', desc: 'Do 60 minút', price: '7,90 €' },
+                { id: 'premium', icon: Crown, label: 'Premium', desc: 'Do 45 minút', price: '12,90 €' }
+              ].map(service => (
+                <button key={service.id} type="button" onClick={() => setFormData({...formData, service_type: service.id})}
+                  className={`w-full p-4 rounded-xl border-2 flex items-center justify-between ${formData.service_type === service.id ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
+                  <div className="flex items-center gap-3">
+                    <service.icon className="w-5 h-5" />
+                    <div className="text-left">
+                      <p className="font-medium">{service.label}</p>
+                      <p className="text-sm text-gray-500">{service.desc}</p>
+                    </div>
+                  </div>
+                  <p className="font-semibold">{service.price}</p>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -152,7 +171,7 @@ function OrderForm() {
           <div className="bg-black text-white rounded-2xl p-6">
             <div className="flex justify-between items-center mb-4">
               <span className="text-gray-400">Celková cena</span>
-              <span className="text-3xl font-bold">{price} Kč</span>
+              <span className="text-3xl font-bold">{price.toFixed(2)} €</span>
             </div>
             <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-white text-black font-semibold rounded-xl disabled:opacity-50">
               {isSubmitting ? 'Odosielam...' : 'Odoslať objednávku'}
@@ -166,7 +185,7 @@ function OrderForm() {
 
 export default function OrderPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Načítavam...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Načítavam...</div>}>
       <OrderForm />
     </Suspense>
   )
