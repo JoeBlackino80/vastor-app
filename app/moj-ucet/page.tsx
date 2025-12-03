@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, User, Mail, Phone, MapPin, Package, LogOut, Building2, FileText } from 'lucide-react'
+import { ArrowLeft, User, Mail, Phone, MapPin, Package, LogOut, Building2, FileText, Edit2, Heart, Lock } from 'lucide-react'
 
 export default function MyAccount() {
   const router = useRouter()
@@ -32,7 +32,7 @@ export default function MyAccount() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-md mx-auto p-6">
-          <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full mb-4">
+          <button onClick={() => router.back()} className="p-2 hover:bg-gray-200 rounded-full mb-4">
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
@@ -61,19 +61,25 @@ export default function MyAccount() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto p-6">
-        <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full mb-4">
+        <button onClick={() => router.back()} className="p-2 hover:bg-gray-200 rounded-full mb-4">
           <ArrowLeft className="w-6 h-6" />
         </button>
 
+        {/* Profil */}
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center">
-              {isCompany ? <Building2 className="w-8 h-8 text-white" /> : <User className="w-8 h-8 text-white" />}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center">
+                {isCompany ? <Building2 className="w-8 h-8 text-white" /> : <User className="w-8 h-8 text-white" />}
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">{displayName}</h1>
+                <p className="text-gray-500 text-sm">{isCompany ? 'Pre firmu' : 'Pre seba'}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold">{displayName}</h1>
-              <p className="text-gray-500 text-sm">{isCompany ? 'Pre firmu' : 'Pre seba'}</p>
-            </div>
+            <Link href="/moj-ucet/upravit" className="p-2 hover:bg-gray-100 rounded-full">
+              <Edit2 className="w-5 h-5 text-gray-400" />
+            </Link>
           </div>
 
           <div className="space-y-4">
@@ -96,6 +102,7 @@ export default function MyAccount() {
           </div>
         </div>
 
+        {/* Fakturačné údaje pre firmy */}
         {isCompany && (
           <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
             <h2 className="font-bold mb-4 flex items-center gap-2">
@@ -122,12 +129,35 @@ export default function MyAccount() {
           </div>
         )}
 
+        {/* Nastavenia */}
+        <div className="bg-white rounded-2xl shadow-sm mb-4 overflow-hidden">
+          <Link href="/moj-ucet/adresy" className="flex items-center justify-between p-4 hover:bg-gray-50 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <Heart className="w-5 h-5 text-gray-400" />
+              <span>Obľúbené adresy</span>
+            </div>
+            <ArrowLeft className="w-5 h-5 text-gray-300 rotate-180" />
+          </Link>
+          <Link href="/moje-objednavky" className="flex items-center justify-between p-4 hover:bg-gray-50 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <Package className="w-5 h-5 text-gray-400" />
+              <span>História objednávok</span>
+            </div>
+            <ArrowLeft className="w-5 h-5 text-gray-300 rotate-180" />
+          </Link>
+          <Link href="/zmena-hesla" className="flex items-center justify-between p-4 hover:bg-gray-50">
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-gray-400" />
+              <span>Zmeniť heslo</span>
+            </div>
+            <ArrowLeft className="w-5 h-5 text-gray-300 rotate-180" />
+          </Link>
+        </div>
+
+        {/* Akcie */}
         <div className="space-y-3">
           <Link href="/objednavka" className="flex items-center justify-center gap-2 w-full py-4 bg-black text-white rounded-xl font-semibold">
             <Package className="w-5 h-5" /> Nová objednávka
-          </Link>
-          <Link href="/moje-objednavky" className="flex items-center justify-center gap-2 w-full py-4 border-2 border-gray-200 rounded-xl font-semibold">
-            História objednávok
           </Link>
           <button onClick={handleLogout} className="flex items-center justify-center gap-2 w-full py-4 text-red-500 font-semibold">
             <LogOut className="w-5 h-5" /> Odhlásiť sa
