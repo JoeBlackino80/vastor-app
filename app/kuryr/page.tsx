@@ -1,15 +1,13 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Navigation, Mail, Lock, AlertCircle, Package, MapPin, CheckCircle, LogOut, Power } from 'lucide-react'
+import { Navigation, Mail, Lock, AlertCircle, Package, CheckCircle, LogOut, Coffee } from 'lucide-react'
 
 export default function CourierPage() {
-  const router = useRouter()
   const [courier, setCourier] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
-  const [isOnline, setIsOnline] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null)
   const watchIdRef = useRef<number | null>(null)
   
@@ -23,20 +21,11 @@ export default function CourierPage() {
     if (saved) {
       const c = JSON.parse(saved)
       setCourier(c)
-      setIsOnline(c.is_online || false)
       fetchOrders(c.id)
+      goOnline(c.id) // Automaticky online pri načítaní
+      startTracking(c.id)
     }
   }, [])
-
-  // Auto-start tracking when online
-  useEffect(() => {
-    if (isOnline && courier) {
-      startTracking()
-    } else {
-      stopTracking()
-    }
-    return () => stopTracking()
-  }, [isOnline, courier])
 
   const fetchOrders = async (courierId: string) => {
     const res = await fetch('/api/courier-orders?courier_id=' + courierId)
@@ -44,23 +33,26 @@ export default function CourierPage() {
     setOrders(data.orders || [])
   }
 
-  const startTracking = () => {
-    if (!navigator.geolocation || !courier) return
+  const goOnline = async (courierId: string) => {
+    await fetch('/api/courier-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courier_id: courierId, is_online: true, status: 'available' })
+    })
+  }
+
+  const startTracking = (courierId: string) => {
+    if (!navigator.geolocation) return
     
     watchIdRef.current = navigator.geolocation.watchPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
         setCurrentLocation({ lat: latitude, lng: longitude })
         
-        // Update courier location
         await fetch('/api/courier-location', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            courier_id: courier.id,
-            latitude,
-            longitude
-          })
+          body: JSON.stringify({ courier_id: courierId, latitude, longitude })
         })
       },
       (error) => console.error('GPS error:', error),
@@ -75,24 +67,19 @@ export default function CourierPage() {
     }
   }
 
-  const toggleOnline = async () => {
-    const newStatus = !isOnline
-    setIsOnline(newStatus)
+  const togglePause = async () => {
+    const newPaused = !isPaused
+    setIsPaused(newPaused)
     
     await fetch('/api/courier-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         courier_id: courier.id,
-        is_online: newStatus,
-        status: newStatus ? 'available' : 'offline'
+        is_online: !newPaused,
+        status: newPaused ? 'paused' : 'available'
       })
     })
-    
-    // Update local storage
-    const updated = { ...courier, is_online: newStatus }
-    localStorage.setItem('courier', JSON.stringify(updated))
-    setCourier(updated)
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -112,6 +99,8 @@ export default function CourierPage() {
         localStorage.setItem('courier', JSON.stringify(data.courier))
         setCourier(data.courier)
         fetchOrders(data.courier.id)
+        goOnline(data.courier.id) // Automaticky online pri prihlásení
+        startTracking(data.courier.id)
       } else {
         if (data.message === 'not_found') setError('Účet neexistuje')
         else if (data.message === 'wrong_password') setError('Nesprávne heslo')
@@ -137,7 +126,6 @@ export default function CourierPage() {
     localStorage.removeItem('courier')
     setCourier(null)
     setOrders([])
-    setIsOnline(false)
   }
 
   const completeDelivery = async () => {
@@ -154,6 +142,7 @@ export default function CourierPage() {
     alert('Doručenie dokončené!')
   }
 
+  // Login form
   if (!courier) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
@@ -190,52 +179,36 @@ export default function CourierPage() {
     )
   }
 
+  // Dashboard
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="bg-black text-white p-4">
+      {/* Header */}
+      <div className={`p-4 ${isPaused ? 'bg-yellow-500' : 'bg-green-500'} text-white`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Navigation className="w-6 h-6" />
             <div>
               <h1 className="font-bold">VASTOR Kurýr</h1>
-              <p className="text-xs text-gray-400">{courier.first_name} {courier.last_name}</p>
+              <p className="text-xs opacity-80">{courier.first_name} {courier.last_name}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/kuryr/dashboard" className="px-3 py-1 bg-white/20 rounded-lg text-sm">Dashboard</Link>
-            <button onClick={logout} className="p-2"><LogOut className="w-5 h-5" /></button>
+            <button onClick={togglePause} className={`px-3 py-1 rounded-lg text-sm flex items-center gap-1 ${isPaused ? 'bg-white text-yellow-600' : 'bg-white/20'}`}>
+              <Coffee className="w-4 h-4" />
+              {isPaused ? 'Pokračovať' : 'Pauza'}
+            </button>
+            <button onClick={logout} className="p-2 bg-white/20 rounded-lg"><LogOut className="w-5 h-5" /></button>
           </div>
+        </div>
+        <div className="mt-2 text-sm opacity-90">
+          {isPaused ? '☕ Na pauze - neprijímaš objednávky' : '✅ Online - prijímaš objednávky'}
+          {currentLocation && !isPaused && (
+            <span className="ml-2">📍 {currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}</span>
+          )}
         </div>
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Online/Offline Toggle */}
-        <div className={`rounded-2xl p-4 shadow-sm ${isOnline ? 'bg-green-500 text-white' : 'bg-white'}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Power className="w-6 h-6" />
-              <div>
-                <p className="font-bold">{isOnline ? 'Si online' : 'Si offline'}</p>
-                <p className={`text-sm ${isOnline ? 'text-green-100' : 'text-gray-500'}`}>
-                  {isOnline ? 'Prijímaš objednávky' : 'Neprijímaš objednávky'}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={toggleOnline}
-              className={`px-6 py-2 rounded-xl font-semibold ${isOnline ? 'bg-white text-green-600' : 'bg-black text-white'}`}
-            >
-              {isOnline ? 'Vypnúť' : 'Zapnúť'}
-            </button>
-          </div>
-          {isOnline && currentLocation && (
-            <p className="text-xs text-green-100 mt-2">
-              📍 GPS: {currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}
-            </p>
-          )}
-        </div>
-
-        {/* Orders */}
         <h2 className="font-bold text-lg">Aktívne objednávky ({orders.length})</h2>
 
         {orders.length === 0 ? (
@@ -243,7 +216,7 @@ export default function CourierPage() {
             <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500">Žiadne aktívne objednávky</p>
             <p className="text-sm text-gray-400 mt-2">
-              {isOnline ? 'Čakám na novú objednávku...' : 'Zapni sa online pre prijímanie objednávok'}
+              {isPaused ? 'Ukonči pauzu pre prijímanie objednávok' : 'Čakám na novú objednávku...'}
             </p>
           </div>
         ) : (
