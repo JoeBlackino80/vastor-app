@@ -72,7 +72,7 @@ export default function MyAccount() {
             </div>
             <div>
               <h1 className="text-xl font-bold">{displayName}</h1>
-              <p className="text-gray-500 text-sm">{isCompany ? 'Firemný účet' : 'Osobný účet'}</p>
+              <p className="text-gray-500 text-sm">{isCompany ? 'Pre firmu' : 'Pre seba'}</p>
             </div>
           </div>
 

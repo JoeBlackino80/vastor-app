@@ -84,12 +84,12 @@ export default function CustomerRegistration() {
               <button type="button" onClick={() => setAccountType('individual')}
                 className={`w-full p-4 rounded-xl border-2 flex items-center gap-4 ${accountType === 'individual' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
                 <User className="w-6 h-6" />
-                <div className="text-left"><p className="font-medium">Fyzická osoba</p><p className="text-sm text-gray-500">Pre osobné použitie</p></div>
+                <div className="text-left"><p className="font-medium">Pre seba</p><p className="text-sm text-gray-500">Osobné objednávky</p></div>
               </button>
               <button type="button" onClick={() => setAccountType('company')}
                 className={`w-full p-4 rounded-xl border-2 flex items-center gap-4 ${accountType === 'company' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
                 <Building2 className="w-6 h-6" />
-                <div className="text-left"><p className="font-medium">Firma</p><p className="text-sm text-gray-500">Pre firemné objednávky</p></div>
+                <div className="text-left"><p className="font-medium">Pre firmu</p><p className="text-sm text-gray-500">Firemné objednávky</p></div>
               </button>
               <button type="button" onClick={() => setStep(2)} className="w-full py-4 bg-black text-white rounded-xl font-semibold mt-4">
                 Pokračovať
