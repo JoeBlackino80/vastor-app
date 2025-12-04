@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 
 export async function POST(request: Request) {
   try {
-    const { order_id, courier_id } = await request.json()
+    const { order_id, courier_id, pin } = await request.json()
 
     if (!order_id || !courier_id) {
       return NextResponse.json({ error: 'Missing order_id or courier_id' }, { status: 400 })
@@ -15,12 +15,21 @@ export async function POST(request: Request) {
       .eq('id', order_id)
       .single()
 
+    if (!order) {
+      return NextResponse.json({ error: 'Objednávka nenájdená' }, { status: 404 })
+    }
+
+    // PIN verification
+    if (order.delivery_pin && order.delivery_pin !== pin) {
+      return NextResponse.json({ error: 'Nesprávny PIN kód' }, { status: 400 })
+    }
+
     // Calculate courier earnings (70% of order price)
     const courierEarnings = order ? Math.round(order.price * 0.7) : 0
 
     // Update order status to delivered
     const { error: orderError } = await (supabase.from('orders') as any)
-      .update({ 
+      .update({
         status: 'delivered',
         completed_at: new Date().toISOString(),
         courier_earnings: courierEarnings
@@ -38,18 +47,14 @@ export async function POST(request: Request) {
       .eq('id', courier_id)
       .single()
 
-    const { error: courierError } = await (supabase.from('couriers') as any)
-      .update({ 
+    await (supabase.from('couriers') as any)
+      .update({
         status: 'available',
         total_deliveries: (courier?.total_deliveries || 0) + 1
       })
       .eq('id', courier_id)
 
-    if (courierError) {
-      console.error('Courier update error:', courierError)
-    }
-
-    // Pošli "delivered" email zákazníkovi
+    // Send delivered email
     if (order?.customer_email) {
       try {
         await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://vastor-app.vercel.app'}/api/send-email`, {
@@ -62,28 +67,10 @@ export async function POST(request: Request) {
             type: 'delivered'
           })
         })
-        console.log('Delivered email sent to:', order.customer_email)
-      } catch (emailError) {
-        console.error('Delivered email error:', emailError)
-      }
-
-      // Pošli aj rating email
-      try {
-        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://vastor-app.vercel.app'}/api/send-rating-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: order.customer_email,
-            orderId: order_id,
-            customerName: order.customer_name
-          })
-        })
-      } catch (emailError) {
-        console.error('Rating email error:', emailError)
+      } catch (e) {
+        console.error('Email error:', e)
       }
     }
-
-    console.log('Delivery completed - Order:', order_id, 'Courier:', courier_id, 'Earnings:', courierEarnings)
 
     return NextResponse.json({ success: true, earnings: courierEarnings })
   } catch (error) {

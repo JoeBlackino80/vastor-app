@@ -7,6 +7,8 @@ export default function CourierPage() {
   const [courier, setCourier] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
+  const [pinCode, setPinCode] = useState('')
+  const [pinError, setPinError] = useState('')
   const [isPaused, setIsPaused] = useState(false)
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null)
   const watchIdRef = useRef<number | null>(null)
@@ -129,14 +131,19 @@ export default function CourierPage() {
   }
 
   const completeDelivery = async () => {
+    setPinError('')
     if (!selectedOrder || !courier) return
     
-    await fetch('/api/complete-delivery', {
+    const res = await fetch('/api/complete-delivery', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_id: selectedOrder.id, courier_id: courier.id })
+      body: JSON.stringify({ order_id: selectedOrder.id, courier_id: courier.id, pin: pinCode })
     })
     
+    const data = await res.json()
+    if (!res.ok) { setPinError(data.error || 'Chyba'); return }
+    
+    setPinCode('')
     setSelectedOrder(null)
     fetchOrders(courier.id)
     alert('Doručenie dokončené!')
@@ -250,9 +257,14 @@ export default function CourierPage() {
         )}
 
         {selectedOrder && (
-          <button onClick={completeDelivery} className="w-full py-4 bg-green-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2">
-            <CheckCircle className="w-5 h-5" /> Doručenie dokončené
-          </button>
+          <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+            <p className="font-semibold text-center">Zadaj PIN od príjemcu</p>
+            <input type="text" value={pinCode} onChange={(e) => setPinCode(e.target.value)} placeholder="4-miestny PIN" maxLength={4} className="w-full text-center text-3xl font-bold py-4 bg-gray-100 rounded-xl tracking-widest" />
+            {pinError && <p className="text-red-500 text-sm text-center">{pinError}</p>}
+            <button onClick={completeDelivery} className="w-full py-4 bg-green-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2">
+              <CheckCircle className="w-5 h-5" /> Doručenie dokončené
+            </button>
+          </div>
         )}
       </div>
     </div>
