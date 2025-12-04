@@ -16,6 +16,13 @@ export async function POST(request: Request) {
         pickup_notes: body.pickup_notes || null,
         delivery_address: body.delivery_address,
         delivery_notes: body.delivery_notes || null,
+        // Údaje príjemcu
+        recipient_name: body.recipient_name || null,
+        recipient_surname: body.recipient_surname || null,
+        recipient_company: body.recipient_company || null,
+        recipient_phone: body.recipient_phone || null,
+        recipient_email: body.recipient_email || null,
+        order_notes: body.order_notes || null,
         package_type: body.package_type,
         service_type: body.service_type,
         price: body.price,
@@ -55,7 +62,6 @@ export async function POST(request: Request) {
       .eq('status', 'available')
 
     if (couriers && couriers.length > 0) {
-      // Získaj polohy
       const courierIds = couriers.map((c: any) => c.id)
       const { data: locations } = await (supabase.from('courier_locations') as any)
         .select('courier_id, latitude, longitude')
@@ -66,7 +72,6 @@ export async function POST(request: Request) {
       let distance = null
 
       if (pickupLat && pickupLng && locations?.length > 0) {
-        // Nájdi najbližšieho
         const courierLocs: Record<string, { lat: number, lng: number }> = {}
         for (const loc of locations) {
           if (!courierLocs[loc.courier_id]) {
@@ -89,12 +94,10 @@ export async function POST(request: Request) {
         }
       }
 
-      // Ak nemáme GPS, použi prvého
       if (!selectedCourier) {
         selectedCourier = couriers[0]
       }
 
-      // Ponúkni objednávku kurierovi (30 sekúnd na odpoveď)
       await (supabase.from('orders') as any)
         .update({
           offered_to: selectedCourier.id,
@@ -106,7 +109,7 @@ export async function POST(request: Request) {
       console.log('Offered to courier:', selectedCourier.first_name)
     }
 
-    // 4. Pošli email
+    // 4. Pošli email objednávateľovi
     try {
       await fetch(new URL('/api/send-email', request.url).toString(), {
         method: 'POST',
@@ -115,10 +118,33 @@ export async function POST(request: Request) {
           to: body.customer_email,
           orderId: order.id,
           pickupAddress: body.pickup_address,
-          deliveryAddress: body.delivery_address
+          deliveryAddress: body.delivery_address,
+          type: 'order_confirmed'
         })
       })
-    } catch (e) {}
+    } catch (e) {
+      console.error('Customer email error:', e)
+    }
+
+    // 5. Pošli email príjemcovi (ak má email)
+    if (body.recipient_email) {
+      try {
+        await fetch(new URL('/api/send-email', request.url).toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: body.recipient_email,
+            orderId: order.id,
+            deliveryAddress: body.delivery_address,
+            recipientName: `${body.recipient_name} ${body.recipient_surname}`,
+            senderName: body.customer_name,
+            type: 'recipient_notification'
+          })
+        })
+      } catch (e) {
+        console.error('Recipient email error:', e)
+      }
+    }
 
     return NextResponse.json({ success: true, order })
   } catch (error) {

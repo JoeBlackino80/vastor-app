@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Package, FileText, ShoppingBag, MapPin, Clock, Crown, CheckCircle, Star } from 'lucide-react'
+import { ArrowLeft, Package, FileText, ShoppingBag, MapPin, Clock, Crown, CheckCircle, Star, User, Building2 } from 'lucide-react'
 
 function OrderForm() {
   const router = useRouter()
@@ -23,6 +23,14 @@ function OrderForm() {
     pickup_notes: '',
     delivery_address: '',
     delivery_notes: '',
+    // Údaje príjemcu
+    recipient_name: '',
+    recipient_surname: '',
+    recipient_company: '',
+    recipient_phone: '',
+    recipient_email: '',
+    // Poznámka k objednávke
+    order_notes: '',
     package_type: 'document',
     service_type: 'standard'
   })
@@ -39,11 +47,9 @@ function OrderForm() {
         customer_phone: c.phone || '',
         pickup_address: c.street ? `${c.street}, ${c.postal_code} ${c.city}` : ''
       }))
-      // Načítaj obľúbené adresy
       fetchFavoriteAddresses(c.id)
     }
 
-    // Ak je reorder, načítaj údaje
     if (isReorder) {
       const reorderData = localStorage.getItem('reorder')
       if (reorderData) {
@@ -122,9 +128,11 @@ function OrderForm() {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Kontaktné údaje */}
+          {/* Kontaktné údaje odosielateľa */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <h2 className="font-bold mb-4 dark:text-white">Kontaktné údaje</h2>
+            <h2 className="font-bold mb-4 dark:text-white flex items-center gap-2">
+              <User className="w-5 h-5" /> Odosielateľ
+            </h2>
             <div className="space-y-4">
               <input type="text" placeholder="Meno a priezvisko *" value={formData.customer_name} onChange={e => setFormData({...formData, customer_name: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
               <input type="email" placeholder="Email *" value={formData.customer_email} onChange={e => setFormData({...formData, customer_email: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
@@ -132,11 +140,32 @@ function OrderForm() {
             </div>
           </div>
 
+          {/* Údaje príjemcu */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <h2 className="font-bold mb-4 dark:text-white flex items-center gap-2">
+              <User className="w-5 h-5" /> Príjemca
+            </h2>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <input type="text" placeholder="Meno *" value={formData.recipient_name} onChange={e => setFormData({...formData, recipient_name: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+                <input type="text" placeholder="Priezvisko *" value={formData.recipient_surname} onChange={e => setFormData({...formData, recipient_surname: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              </div>
+              <div className="relative">
+                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input type="text" placeholder="Firma (voliteľné)" value={formData.recipient_company} onChange={e => setFormData({...formData, recipient_company: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
+              </div>
+              <input type="tel" placeholder="Telefón príjemcu *" value={formData.recipient_phone} onChange={e => setFormData({...formData, recipient_phone: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="email" placeholder="Email príjemcu (voliteľné - pre notifikácie)" value={formData.recipient_email} onChange={e => setFormData({...formData, recipient_email: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
+              <p className="text-xs text-gray-500 dark:text-gray-400">Príjemca dostane SMS/email s tracking linkom</p>
+            </div>
+          </div>
+
           {/* Adresy */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <h2 className="font-bold mb-4 dark:text-white">Adresy</h2>
+            <h2 className="font-bold mb-4 dark:text-white flex items-center gap-2">
+              <MapPin className="w-5 h-5" /> Adresy
+            </h2>
             
-            {/* Obľúbené adresy */}
             {favoriteAddresses.length > 0 && (
               <div className="mb-4">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Obľúbené adresy:</p>
@@ -155,12 +184,12 @@ function OrderForm() {
               <div>
                 <label className="text-sm text-gray-500 dark:text-gray-400 mb-1 block">Adresa vyzdvihnutia *</label>
                 <input type="text" placeholder="Ulica, číslo, mesto" value={formData.pickup_address} onChange={e => setFormData({...formData, pickup_address: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
-                <input type="text" placeholder="Poznámka (voliteľné)" value={formData.pickup_notes} onChange={e => setFormData({...formData, pickup_notes: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl mt-2" />
+                <input type="text" placeholder="Poznámka k vyzdvihnutiu (poschodie, zvonček...)" value={formData.pickup_notes} onChange={e => setFormData({...formData, pickup_notes: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl mt-2" />
               </div>
               <div>
                 <label className="text-sm text-gray-500 dark:text-gray-400 mb-1 block">Adresa doručenia *</label>
                 <input type="text" placeholder="Ulica, číslo, mesto" value={formData.delivery_address} onChange={e => setFormData({...formData, delivery_address: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
-                <input type="text" placeholder="Poznámka (voliteľné)" value={formData.delivery_notes} onChange={e => setFormData({...formData, delivery_notes: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl mt-2" />
+                <input type="text" placeholder="Poznámka k doručeniu (poschodie, zvonček...)" value={formData.delivery_notes} onChange={e => setFormData({...formData, delivery_notes: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl mt-2" />
               </div>
             </div>
           </div>
@@ -205,6 +234,17 @@ function OrderForm() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Poznámka k objednávke */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <h2 className="font-bold mb-4 dark:text-white">Poznámka k objednávke</h2>
+            <textarea 
+              placeholder="Špeciálne inštrukcie, krehký tovar, volať pred doručením..." 
+              value={formData.order_notes} 
+              onChange={e => setFormData({...formData, order_notes: e.target.value})} 
+              className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl min-h-[100px] resize-none"
+            />
           </div>
 
           {error && <p className="text-red-500 text-center">{error}</p>}

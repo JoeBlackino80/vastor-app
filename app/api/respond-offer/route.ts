@@ -10,7 +10,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing data' }, { status: 400 })
     }
 
-    // Získaj objednávku
     const { data: order } = await (supabase.from('orders') as any)
       .select('*')
       .eq('id', order_id)
@@ -20,7 +19,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    // Skontroluj či ponuka ešte platí
     if (order.offered_to !== courier_id || order.status !== 'looking_for_courier') {
       return NextResponse.json({ error: 'Offer expired or already taken' }, { status: 400 })
     }
@@ -34,7 +32,7 @@ export async function POST(request: Request) {
 
       const courierName = courierData ? `${courierData.first_name} ${courierData.last_name}` : 'VASTOR'
 
-      // Kurýr prijal - priraď ho
+      // Priraď objednávku
       await (supabase.from('orders') as any)
         .update({ 
           courier_id: courier_id, 
@@ -48,7 +46,7 @@ export async function POST(request: Request) {
         .update({ status: 'busy' })
         .eq('id', courier_id)
 
-      // Pošli "pickup" email zákazníkovi
+      // Pošli email objednávateľovi
       if (order.customer_email) {
         try {
           await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://vastor-app.vercel.app'}/api/send-email`, {
@@ -62,21 +60,37 @@ export async function POST(request: Request) {
               type: 'pickup'
             })
           })
-          console.log('Pickup email sent to:', order.customer_email)
-        } catch (emailError) {
-          console.error('Pickup email error:', emailError)
+        } catch (e) {
+          console.error('Customer email error:', e)
+        }
+      }
+
+      // Pošli email príjemcovi
+      if (order.recipient_email) {
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://vastor-app.vercel.app'}/api/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: order.recipient_email,
+              orderId: order_id,
+              deliveryAddress: order.delivery_address,
+              courierName: courierName,
+              recipientName: `${order.recipient_name || ''} ${order.recipient_surname || ''}`.trim(),
+              type: 'recipient_on_way'
+            })
+          })
+        } catch (e) {
+          console.error('Recipient email error:', e)
         }
       }
 
       console.log('Order accepted by courier:', courier_id)
-
       return NextResponse.json({ success: true, message: 'accepted' })
 
     } else if (action === 'reject') {
-      // Kurýr odmietol - ponúkni ďalšiemu
       console.log('Order rejected by courier:', courier_id)
 
-      // Nájdi ďalšieho najbližšieho kuriera
       const nextCourier = await findNextCourier(order, courier_id)
 
       if (nextCourier) {
