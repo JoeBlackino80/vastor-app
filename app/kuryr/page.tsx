@@ -147,7 +147,7 @@ export default function CourierPage() {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-lg">
-          <div className="flex items-center gap-3 mb-8">
+          <Link href="/" className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
               <Navigation className="w-6 h-6 text-white" />
             </div>
@@ -155,7 +155,7 @@ export default function CourierPage() {
               <h1 className="text-xl font-bold">VASTOR Kurýr</h1>
               <p className="text-gray-500 text-sm">Prihlásenie</p>
             </div>
-          </div>
+          </Link>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
