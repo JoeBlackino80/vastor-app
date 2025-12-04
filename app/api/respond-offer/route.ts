@@ -26,6 +26,14 @@ export async function POST(request: Request) {
     }
 
     if (action === 'accept') {
+      // Získaj meno kuriéra
+      const { data: courierData } = await (supabase.from('couriers') as any)
+        .select('first_name, last_name')
+        .eq('id', courier_id)
+        .single()
+
+      const courierName = courierData ? `${courierData.first_name} ${courierData.last_name}` : 'VASTOR'
+
       // Kurýr prijal - priraď ho
       await (supabase.from('orders') as any)
         .update({ 
@@ -39,6 +47,26 @@ export async function POST(request: Request) {
       await (supabase.from('couriers') as any)
         .update({ status: 'busy' })
         .eq('id', courier_id)
+
+      // Pošli "pickup" email zákazníkovi
+      if (order.customer_email) {
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://vastor-app.vercel.app'}/api/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: order.customer_email,
+              orderId: order_id,
+              deliveryAddress: order.delivery_address,
+              courierName: courierName,
+              type: 'pickup'
+            })
+          })
+          console.log('Pickup email sent to:', order.customer_email)
+        } catch (emailError) {
+          console.error('Pickup email error:', emailError)
+        }
+      }
 
       console.log('Order accepted by courier:', courier_id)
 
@@ -55,14 +83,13 @@ export async function POST(request: Request) {
         await (supabase.from('orders') as any)
           .update({ 
             offered_to: nextCourier.id,
-            offer_expires_at: new Date(Date.now() + 30000).toISOString(), // 30 sekúnd
+            offer_expires_at: new Date(Date.now() + 30000).toISOString(),
             offer_distance: nextCourier.distance
           })
           .eq('id', order_id)
 
         console.log('Offered to next courier:', nextCourier.id)
       } else {
-        // Žiadny ďalší kurýr - nechaj ako pending
         await (supabase.from('orders') as any)
           .update({ 
             offered_to: null,
@@ -85,7 +112,6 @@ export async function POST(request: Request) {
 }
 
 async function findNextCourier(order: any, excludeCourierId: string) {
-  // Získaj dostupných kurierov okrem toho čo odmietol
   const { data: couriers } = await (supabase.from('couriers') as any)
     .select('id, first_name')
     .eq('status', 'available')
@@ -93,7 +119,6 @@ async function findNextCourier(order: any, excludeCourierId: string) {
 
   if (!couriers || couriers.length === 0) return null
 
-  // Získaj ich polohy
   const courierIds = couriers.map((c: any) => c.id)
   const { data: locations } = await (supabase.from('courier_locations') as any)
     .select('courier_id, latitude, longitude')
@@ -102,7 +127,6 @@ async function findNextCourier(order: any, excludeCourierId: string) {
 
   if (!locations) return couriers[0]
 
-  // Geocode pickup adresu
   let pickupLat = null, pickupLng = null
   try {
     const geoRes = await fetch(
@@ -118,7 +142,6 @@ async function findNextCourier(order: any, excludeCourierId: string) {
 
   if (!pickupLat) return { id: couriers[0].id, distance: null }
 
-  // Nájdi najbližšieho
   const courierLocs: Record<string, { lat: number, lng: number }> = {}
   for (const loc of locations) {
     if (!courierLocs[loc.courier_id]) {

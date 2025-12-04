@@ -49,8 +49,25 @@ export async function POST(request: Request) {
       console.error('Courier update error:', courierError)
     }
 
-    // Send rating email to customer
+    // Pošli "delivered" email zákazníkovi
     if (order?.customer_email) {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://vastor-app.vercel.app'}/api/send-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: order.customer_email,
+            orderId: order_id,
+            deliveryAddress: order.delivery_address,
+            type: 'delivered'
+          })
+        })
+        console.log('Delivered email sent to:', order.customer_email)
+      } catch (emailError) {
+        console.error('Delivered email error:', emailError)
+      }
+
+      // Pošli aj rating email
       try {
         await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://vastor-app.vercel.app'}/api/send-rating-email`, {
           method: 'POST',
