@@ -36,11 +36,11 @@ export async function POST(request: Request) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: customer.email,
-        subject: 'Reset hesla - VASTOR',
+        subject: 'Reset hesla - voru',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #000; color: #fff; padding: 20px; text-align: center;">
-              <h1 style="margin: 0;">VASTOR</h1>
+              <h1 style="margin: 0;">voru</h1>
             </div>
             <div style="padding: 30px; background: #f9f9f9;">
               <h2>Reset hesla</h2>

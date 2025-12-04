@@ -190,7 +190,7 @@ export default function CourierRegistration() {
             </div>
             <div>
               <h1 className="text-xl font-bold">Registracia kuriera</h1>
-              <p className="text-gray-500 text-sm">Pripoj sa k timu VASTOR</p>
+              <p className="text-gray-500 text-sm">Pripoj sa k timu voru</p>
             </div>
           </div>
           

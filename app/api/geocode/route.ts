@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     // OpenStreetMap Nominatim (zadarmo)
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
-      { headers: { 'User-Agent': 'VASTOR-App/1.0' } }
+      { headers: { 'User-Agent': 'voru-App/1.0' } }
     )
     const data = await res.json()
 

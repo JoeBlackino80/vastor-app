@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     try {
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(body.pickup_address)}&limit=1`,
-        { headers: { 'User-Agent': 'VASTOR-App/1.0' } }
+        { headers: { 'User-Agent': 'voru-App/1.0' } }
       )
       const geoData = await geoRes.json()
       if (geoData?.[0]) {

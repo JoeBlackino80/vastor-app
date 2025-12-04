@@ -10,13 +10,13 @@ export async function POST(request: Request) {
     const ratingUrl = `https://vastor-app.vercel.app/hodnotenie/${orderId}`
 
     const { data, error } = await resend.emails.send({
-      from: 'VASTOR <onboarding@resend.dev>',
+      from: 'voru <onboarding@resend.dev>',
       to: [to],
-      subject: 'Ohodnoťte nášho kuriéra - VASTOR',
+      subject: 'Ohodnoťte nášho kuriéra - voru',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: #000; color: #fff; padding: 20px; text-align: center;">
-            <h1 style="margin: 0;">VASTOR</h1>
+            <h1 style="margin: 0;">voru</h1>
           </div>
           <div style="padding: 30px; background: #f9f9f9;">
             <h2>Dobrý deň${customerName ? `, ${customerName}` : ''}!</h2>
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
               </a>
             </div>
             
-            <p style="color: #666; font-size: 12px;">Ďakujeme, že používate VASTOR!</p>
+            <p style="color: #666; font-size: 12px;">Ďakujeme, že používate voru!</p>
           </div>
         </div>
       `

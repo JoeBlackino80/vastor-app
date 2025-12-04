@@ -14,7 +14,7 @@ export default function Navigation() {
           <div className="w-10 h-10 bg-black flex items-center justify-center text-white font-black text-lg">
             V
           </div>
-          VASTOR
+          voru
         </Link>
 
         {/* Desktop menu */}

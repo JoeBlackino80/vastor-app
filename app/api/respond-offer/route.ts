@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         .eq('id', courier_id)
         .single()
 
-      const courierName = courierData ? `${courierData.first_name} ${courierData.last_name}` : 'VASTOR'
+      const courierName = courierData ? `${courierData.first_name} ${courierData.last_name}` : 'voru'
 
       // Priraď objednávku
       await (supabase.from('orders') as any)
@@ -145,7 +145,7 @@ async function findNextCourier(order: any, excludeCourierId: string) {
   try {
     const geoRes = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(order.pickup_address)}&limit=1`,
-      { headers: { 'User-Agent': 'VASTOR-App/1.0' } }
+      { headers: { 'User-Agent': 'voru-App/1.0' } }
     )
     const geoData = await geoRes.json()
     if (geoData?.[0]) {

@@ -66,7 +66,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
         <form onSubmit={handleLogin} className="bg-white rounded-2xl p-8 w-full max-w-md shadow-lg">
-          <h1 className="text-2xl font-bold mb-6">VASTOR Admin</h1>
+          <h1 className="text-2xl font-bold mb-6">voru Admin</h1>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Heslo" className="w-full px-4 py-3 bg-gray-100 rounded-xl mb-4" />
           <button type="submit" className="w-full py-3 bg-black text-white rounded-xl font-semibold">Prihlásiť</button>
         </form>
@@ -80,7 +80,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">VASTOR Admin</h1>
+          <h1 className="text-2xl font-bold">voru Admin</h1>
           <Link href="/admin/stats" className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm">
             <BarChart3 className="w-5 h-5" /> Štatistiky
           </Link>

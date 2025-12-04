@@ -26,7 +26,7 @@ export default function Home() {
             <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center">
               <span className="text-white dark:text-black font-bold text-sm">V</span>
             </div>
-            <span className="text-xl font-bold dark:text-white">VASTOR</span>
+            <span className="text-xl font-bold dark:text-white">voru</span>
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#sluzby" className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white">{t.nav.services}</a>
@@ -232,7 +232,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-6 dark:text-white">Staň sa kuriérom</h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-            Zarábaj flexibilne, pracuj kedy chceš. Pridaj sa k tímu VASTOR.
+            Zarábaj flexibilne, pracuj kedy chceš. Pridaj sa k tímu voru.
           </p>
           <Link href="/kuryr/registracia" className="inline-flex items-center gap-2 px-8 py-4 border-2 border-black dark:border-white dark:text-white rounded-full text-lg font-medium hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">
             {t.nav.forCouriers} <ArrowRight className="w-5 h-5" />
@@ -245,7 +245,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div>
-              <h3 className="text-2xl font-bold mb-2">VASTOR</h3>
+              <h3 className="text-2xl font-bold mb-2">voru</h3>
               <p className="text-gray-400">Kuriérske služby novej generácie</p>
             </div>
             <div className="flex items-center gap-6">
@@ -258,7 +258,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
-            © 2024 VASTOR. Všetky práva vyhradené.
+            © 2024 voru. Všetky práva vyhradené.
           </div>
         </div>
       </footer>

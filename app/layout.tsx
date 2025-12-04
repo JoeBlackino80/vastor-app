@@ -2,21 +2,21 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
-  title: 'VASTOR - Kuriérske služby',
+  title: 'voru - Kuriérske služby',
   description: 'Rýchle a spoľahlivé kuriérske služby pre váš biznis aj súkromné potreby.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'VASTOR',
+    title: 'voru',
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
     type: 'website',
-    siteName: 'VASTOR',
-    title: 'VASTOR - Kuriérske služby',
+    siteName: 'voru',
+    title: 'voru - Kuriérske služby',
     description: 'Rýchle a spoľahlivé kuriérske služby',
   },
 }
@@ -43,7 +43,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="VASTOR" />
+        <meta name="apple-mobile-web-app-title" content="voru" />
         <meta name="mobile-web-app-capable" content="yes" />
         <script
           dangerouslySetInnerHTML={{

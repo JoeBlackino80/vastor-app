@@ -10,7 +10,7 @@ export default function Footer() {
               <div className="w-10 h-10 bg-black flex items-center justify-center text-white font-black">
                 V
               </div>
-              VASTOR
+              voru
             </Link>
             <p className="text-gray-600 text-sm leading-relaxed">
               Profesionální kurýrní služba pro Prahu. Rychle, spolehlivě, transparentně.
@@ -48,7 +48,7 @@ export default function Footer() {
 
         <div className="flex flex-col md:flex-row justify-between items-center pt-10 border-t border-gray-200 gap-4">
           <p className="text-gray-500 text-sm">
-            2025 VASTOR CAPITAL s.r.o. Všechna práva vyhrazena.
+            2025 voru CAPITAL s.r.o. Všechna práva vyhrazena.
           </p>
           <div className="flex gap-8">
             <Link href="#" className="text-gray-500 text-sm hover:text-black transition-colors">Ochrana soukromí</Link>

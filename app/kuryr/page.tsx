@@ -159,7 +159,7 @@ export default function CourierPage() {
               <Navigation className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">VASTOR Kurýr</h1>
+              <h1 className="text-xl font-bold">voru Kurýr</h1>
               <p className="text-gray-500 text-sm">Prihlásenie</p>
             </div>
           </Link>
@@ -195,7 +195,7 @@ export default function CourierPage() {
           <div className="flex items-center gap-3">
             <Navigation className="w-6 h-6" />
             <div>
-              <h1 className="font-bold">VASTOR Kurýr</h1>
+              <h1 className="font-bold">voru Kurýr</h1>
               <p className="text-xs opacity-80">{courier.first_name} {courier.last_name}</p>
             </div>
           </div>
