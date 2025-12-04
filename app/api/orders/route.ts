@@ -2,9 +2,17 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { calculateDistance } from '@/lib/distance'
 
+// Generovanie 4-miestneho PIN kódu
+function generatePIN(): string {
+  return Math.floor(1000 + Math.random() * 9000).toString()
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+    
+    // Vygeneruj PIN pre doručenie
+    const deliveryPin = generatePIN()
 
     // 1. Vytvor objednávku so statusom 'looking_for_courier'
     const { data: order, error } = await (supabase.from('orders') as any)
@@ -16,13 +24,13 @@ export async function POST(request: Request) {
         pickup_notes: body.pickup_notes || null,
         delivery_address: body.delivery_address,
         delivery_notes: body.delivery_notes || null,
-        // Údaje príjemcu
         recipient_name: body.recipient_name || null,
         recipient_surname: body.recipient_surname || null,
         recipient_company: body.recipient_company || null,
         recipient_phone: body.recipient_phone || null,
         recipient_email: body.recipient_email || null,
         order_notes: body.order_notes || null,
+        delivery_pin: deliveryPin,
         package_type: body.package_type,
         service_type: body.service_type,
         price: body.price,
@@ -36,7 +44,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log('Order created:', order.id)
+    console.log('Order created:', order.id, 'PIN:', deliveryPin)
 
     // 2. Geocoding pickup adresy
     let pickupLat: number | null = null
@@ -84,7 +92,6 @@ export async function POST(request: Request) {
           const loc = courierLocs[c.id]
           if (loc) {
             const dist = calculateDistance(pickupLat, pickupLng, loc.lat, loc.lng)
-            console.log(`Courier ${c.first_name}: ${dist.toFixed(2)} km`)
             if (dist < minDist) {
               minDist = dist
               selectedCourier = c
@@ -105,8 +112,6 @@ export async function POST(request: Request) {
           offer_distance: distance
         })
         .eq('id', order.id)
-
-      console.log('Offered to courier:', selectedCourier.first_name)
     }
 
     // 4. Pošli email objednávateľovi
@@ -126,7 +131,7 @@ export async function POST(request: Request) {
       console.error('Customer email error:', e)
     }
 
-    // 5. Pošli email príjemcovi (ak má email)
+    // 5. Pošli email príjemcovi s PIN kódom
     if (body.recipient_email) {
       try {
         await fetch(new URL('/api/send-email', request.url).toString(), {
@@ -138,6 +143,7 @@ export async function POST(request: Request) {
             deliveryAddress: body.delivery_address,
             recipientName: `${body.recipient_name} ${body.recipient_surname}`,
             senderName: body.customer_name,
+            deliveryPin: deliveryPin,
             type: 'recipient_notification'
           })
         })
