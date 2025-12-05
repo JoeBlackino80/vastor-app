@@ -21,6 +21,10 @@ export const translations = {
       avgDelivery: 'Priemerný čas doručenia',
       deliveredPackages: 'Doručených zásielok',
       successRate: 'Úspešnosť doručenia',
+      expressDelivery: 'Express doručenie',
+      expressTime: 'do 60 min',
+      realtimeTracking: 'Sledovanie v reálnom čase',
+      trackingDesc: 'Viete presne, kde je váš kuriér',
     },
     // Services
     services: {
@@ -119,6 +123,10 @@ export const translations = {
       avgDelivery: 'Průměrný čas doručení',
       deliveredPackages: 'Doručených zásilek',
       successRate: 'Úspěšnost doručení',
+      expressDelivery: 'Express doručení',
+      expressTime: 'do 60 min',
+      realtimeTracking: 'Sledování v reálném čase',
+      trackingDesc: 'Víte přesně, kde je váš kurýr',
     },
     services: {
       title: 'Co pro vás doručíme',
