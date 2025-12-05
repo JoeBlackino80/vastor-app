@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import LocationMap from '@/components/LocationMap'
 import { Package, Clock, MapPin, Shield, ArrowRight, Phone, Mail, User, FileText, ShoppingCart, Zap, ChevronRight } from 'lucide-react'
 import { useTranslation } from '@/lib/useTranslation'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -96,9 +97,7 @@ export default function Home() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">Čas doručenia</p>
                 <p className="text-2xl font-bold dark:text-white">47 min</p>
               </div>
-              <div className="w-24 h-24 bg-black dark:bg-white rounded-2xl flex items-center justify-center mx-auto mt-16 mb-8">
-                <MapPin className="w-12 h-12 text-white dark:text-black" />
-              </div>
+              <div className="mx-auto mt-8 mb-8 rounded-xl overflow-hidden"><LocationMap /></div>
               <h3 className="text-xl font-bold text-center mb-2 dark:text-white">Sledovanie v reálnom čase</h3>
               <p className="text-gray-500 dark:text-gray-400 text-center">Viete presne, kde je váš kuriér</p>
             </div>
