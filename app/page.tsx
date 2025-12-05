@@ -94,8 +94,8 @@ export default function Home() {
           <div className="relative">
             <div className="bg-gray-100 dark:bg-gray-800 rounded-3xl p-8 relative">
               <div className="absolute top-4 right-4 bg-white dark:bg-gray-700 rounded-xl p-4 shadow-lg">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Čas doručenia</p>
-                <p className="text-2xl font-bold dark:text-white">47 min</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Express doručenie</p>
+                <p className="text-2xl font-bold dark:text-white">do 60 min</p>
               </div>
               <div className="mx-auto mt-8 mb-8 rounded-xl overflow-hidden"><LocationMap /></div>
               <h3 className="text-xl font-bold text-center mb-2 dark:text-white">Sledovanie v reálnom čase</h3>
