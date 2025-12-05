@@ -101,10 +101,6 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-center mb-2 dark:text-white">Sledovanie v reálnom čase</h3>
               <p className="text-gray-500 dark:text-gray-400 text-center">Viete presne, kde je váš kuriér</p>
-              <div className="absolute bottom-2 left-2 max-w-[45%] bg-white dark:bg-gray-700 rounded-xl p-4 shadow-lg">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Status</p>
-                <p className="font-medium dark:text-white">Kuriér vyzdvihol zásielku</p>
-              </div>
             </div>
           </div>
         </div>
