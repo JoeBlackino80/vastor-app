@@ -438,7 +438,6 @@ export default function CourierRegistration() {
                     />
                   </div>
                 </>
-                </>
             )}
             </div>
           )}
