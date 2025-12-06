@@ -1,4 +1,5 @@
 'use client'
+import Turnstile from '@/components/Turnstile'
 import { useState } from 'react'
 import { UserPlus, CheckCircle, Truck, Bike, Car, Eye, EyeOff, Upload, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
@@ -48,6 +49,7 @@ export default function CourierRegistration() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
 
   const validateStep = (currentStep: number) => {
     setError('')
@@ -562,9 +564,10 @@ export default function CourierRegistration() {
                 Dalej
               </button>
             ) : (
+              <Turnstile onVerify={setTurnstileToken} />
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !turnstileToken}
                 className="flex-1 py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50"
               >
                 {isSubmitting ? 'Odosielam...' : 'Odoslat registraciu'}

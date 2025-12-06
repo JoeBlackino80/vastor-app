@@ -1,4 +1,5 @@
 'use client'
+import Turnstile from '@/components/Turnstile'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -10,6 +11,7 @@ export default function CustomerRegistration() {
   const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [success, setSuccess] = useState(false)
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', phone: '',
@@ -145,7 +147,8 @@ export default function CustomerRegistration() {
                 <input type="password" placeholder="Potvrdiť heslo *" value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl" required />
               </div>
               {error && <div className="flex items-center gap-2 text-red-500 text-sm"><AlertCircle className="w-4 h-4" />{error}</div>}
-              <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
+              <Turnstile onVerify={setTurnstileToken} />
+              <button type="submit" disabled={isSubmitting || !turnstileToken} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
                 {isSubmitting ? 'Registrujem...' : 'Registrovať sa'}
               </button>
             </div>

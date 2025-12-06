@@ -1,4 +1,5 @@
 'use client'
+import Turnstile from '@/components/Turnstile'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -9,6 +10,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,7 +71,8 @@ export default function ForgotPassword() {
             </div>
           )}
 
-          <button type="submit" disabled={isLoading} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
+          <Turnstile onVerify={setTurnstileToken} />
+          <button type="submit" disabled={isLoading || !turnstileToken} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
             {isLoading ? 'Odosielam...' : 'Odoslať odkaz'}
           </button>
         </form>

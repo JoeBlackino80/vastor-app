@@ -1,4 +1,5 @@
 'use client'
+import Turnstile from '@/components/Turnstile'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Navigation, Mail, Lock, AlertCircle, Package, CheckCircle, LogOut, Coffee } from 'lucide-react'
@@ -16,6 +17,7 @@ export default function CourierPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -174,7 +176,8 @@ export default function CourierPage() {
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Heslo" className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl" required />
             </div>
             {error && <div className="flex items-center gap-2 text-red-500 text-sm"><AlertCircle className="w-4 h-4" />{error}</div>}
-            <button type="submit" disabled={isLoading} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
+            <Turnstile onVerify={setTurnstileToken} />
+            <button type="submit" disabled={isLoading || !turnstileToken} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
               {isLoading ? 'Prihlasujem...' : 'Prihlásiť sa'}
             </button>
           </form>
