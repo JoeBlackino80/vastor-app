@@ -438,7 +438,8 @@ export default function CourierRegistration() {
                     />
                   </div>
                 </>
-              )}
+                </>
+            )}
             </div>
           )}
 
@@ -553,6 +554,7 @@ export default function CourierRegistration() {
               >
                 Spat
               </button>
+              </>
             )}
             
             {step < 6 ? (
@@ -564,6 +566,7 @@ export default function CourierRegistration() {
                 Dalej
               </button>
             ) : (
+              <>
               <Turnstile onVerify={setTurnstileToken} />
               <button
                 type="submit"
@@ -572,6 +575,7 @@ export default function CourierRegistration() {
               >
                 {isSubmitting ? 'Odosielam...' : 'Odoslat registraciu'}
               </button>
+              </>
             )}
           </div>
         </form>
