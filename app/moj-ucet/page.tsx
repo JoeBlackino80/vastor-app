@@ -8,10 +8,27 @@ export default function MyAccount() {
   const router = useRouter()
   const [customer, setCustomer] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [stats, setStats] = useState({ total: 0, delivered: 0, pending: 0, totalSpent: 0 })
 
   useEffect(() => {
     const saved = localStorage.getItem('customer')
-    if (saved) setCustomer(JSON.parse(saved))
+    if (saved) {
+      const c = JSON.parse(saved)
+      setCustomer(c)
+      // Load stats
+      fetch(`/api/customer-orders?email=${c.email}`)
+        .then(r => r.json())
+        .then(orders => {
+          if (Array.isArray(orders)) {
+            setStats({
+              total: orders.length,
+              delivered: orders.filter((o: any) => o.status === 'delivered').length,
+              pending: orders.filter((o: any) => ['pending','accepted','picked_up'].includes(o.status)).length,
+              totalSpent: orders.reduce((sum: number, o: any) => sum + (o.price || 0), 0)
+            })
+          }
+        })
+    }
     setIsLoading(false)
   }, [])
 
@@ -101,6 +118,30 @@ export default function MyAccount() {
             )}
           </div>
         </div>
+
+        {/* Dashboard štatistiky */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
+          <h2 className="font-bold mb-4">Prehľad</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 rounded-xl p-4 text-center">
+              <p className="text-3xl font-bold">{stats.total}</p>
+              <p className="text-sm text-gray-500">Celkom objednávok</p>
+            </div>
+            <div className="bg-green-50 rounded-xl p-4 text-center">
+              <p className="text-3xl font-bold text-green-600">{stats.delivered}</p>
+              <p className="text-sm text-gray-500">Doručených</p>
+            </div>
+            <div className="bg-yellow-50 rounded-xl p-4 text-center">
+              <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
+              <p className="text-sm text-gray-500">Aktívnych</p>
+            </div>
+            <div className="bg-blue-50 rounded-xl p-4 text-center">
+              <p className="text-3xl font-bold text-blue-600">{stats.totalSpent.toFixed(0)}€</p>
+              <p className="text-sm text-gray-500">Celkom €</p>
+            </div>
+          </div>
+        </div>
+
 
         {/* Fakturačné údaje pre firmy */}
         {isCompany && (
