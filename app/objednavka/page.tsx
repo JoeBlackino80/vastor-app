@@ -16,26 +16,41 @@ function OrderForm() {
   const [error, setError] = useState('')
   
   const [formData, setFormData] = useState({
+    // Odosielateľ
     customer_name: '',
     customer_email: '',
     customer_phone: '',
-    pickup_address: '',
+    // Vyzdvihnutie
+    pickup_company: '',
+    pickup_name: '',
+    pickup_surname: '',
+    pickup_street: '',
+    pickup_city: '',
+    pickup_postal: '',
+    pickup_country: 'Slovensko',
+    pickup_phone: '',
+    pickup_email: '',
     pickup_notes: '',
-    delivery_address: '',
+    // Doručenie
+    delivery_company: '',
+    delivery_name: '',
+    delivery_surname: '',
+    delivery_street: '',
+    delivery_city: '',
+    delivery_postal: '',
+    delivery_country: 'Slovensko',
+    delivery_phone: '',
+    delivery_email: '',
     delivery_notes: '',
-    // Údaje príjemcu
-    recipient_name: '',
-    recipient_surname: '',
-    recipient_company: '',
-    recipient_phone: '',
-    recipient_email: '',
-    // Poznámka k objednávke
+    delivery_pin: '',
+    // Objednávka
     order_notes: '',
     package_type: 'document',
     service_type: 'standard',
     insurance: 0,
     reverse_delivery: false
   })
+
 
   useEffect(() => {
     const saved = localStorage.getItem('customer')
@@ -47,7 +62,9 @@ function OrderForm() {
         customer_name: c.account_type === 'company' ? c.company_name : `${c.first_name} ${c.last_name}`,
         customer_email: c.email,
         customer_phone: c.phone || '',
-        pickup_address: c.street ? `${c.street}, ${c.postal_code} ${c.city}` : ''
+        pickup_street: c.street || '',
+        pickup_city: c.city || '',
+        pickup_postal: c.postal_code || ''
       }))
       fetchFavoriteAddresses(c.id)
     }
@@ -142,58 +159,56 @@ function OrderForm() {
             </div>
           </div>
 
-          {/* Údaje príjemcu */}
+          {/* Adresa vyzdvihnutia */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
             <h2 className="font-bold mb-4 dark:text-white flex items-center gap-2">
-              <User className="w-5 h-5" /> Príjemca
+              <MapPin className="w-5 h-5" /> Adresa vyzdvihnutia
             </h2>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <input type="text" placeholder="Meno *" value={formData.recipient_name} onChange={e => setFormData({...formData, recipient_name: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
-                <input type="text" placeholder="Priezvisko *" value={formData.recipient_surname} onChange={e => setFormData({...formData, recipient_surname: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
-              </div>
-              <div className="relative">
-                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input type="text" placeholder="Firma (voliteľné)" value={formData.recipient_company} onChange={e => setFormData({...formData, recipient_company: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
-              </div>
-              <input type="tel" placeholder="Telefón príjemcu *" value={formData.recipient_phone} onChange={e => setFormData({...formData, recipient_phone: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
-              <input type="email" placeholder="Email príjemcu (voliteľné - pre notifikácie)" value={formData.recipient_email} onChange={e => setFormData({...formData, recipient_email: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
-              <p className="text-xs text-gray-500 dark:text-gray-400">Príjemca dostane SMS/email s tracking linkom</p>
+            <div className="grid grid-cols-2 gap-3">
+              <input type="text" placeholder="Firma (voliteľné)" value={formData.pickup_company} onChange={e => setFormData({...formData, pickup_company: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
+              <input type="text" placeholder="Meno *" value={formData.pickup_name} onChange={e => setFormData({...formData, pickup_name: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="text" placeholder="Priezvisko *" value={formData.pickup_surname} onChange={e => setFormData({...formData, pickup_surname: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="text" placeholder="Ulica a číslo *" value={formData.pickup_street} onChange={e => setFormData({...formData, pickup_street: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="text" placeholder="Mesto *" value={formData.pickup_city} onChange={e => setFormData({...formData, pickup_city: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="text" placeholder="PSČ *" value={formData.pickup_postal} onChange={e => setFormData({...formData, pickup_postal: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <select value={formData.pickup_country} onChange={e => setFormData({...formData, pickup_country: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl">
+                <option value="Slovensko">Slovensko</option>
+                <option value="Česko">Česko</option>
+                <option value="Rakúsko">Rakúsko</option>
+                <option value="Maďarsko">Maďarsko</option>
+                <option value="Poľsko">Poľsko</option>
+              </select>
+              <input type="tel" placeholder="Telefón *" value={formData.pickup_phone} onChange={e => setFormData({...formData, pickup_phone: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="email" placeholder="Email" value={formData.pickup_email} onChange={e => setFormData({...formData, pickup_email: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
+              <textarea placeholder="Poznámky (poschodie, zvonček...)" value={formData.pickup_notes} onChange={e => setFormData({...formData, pickup_notes: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" rows={2} />
             </div>
           </div>
 
-          {/* Adresy */}
+          {/* Adresa doručenia */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
             <h2 className="font-bold mb-4 dark:text-white flex items-center gap-2">
-              <MapPin className="w-5 h-5" /> Adresy
+              <MapPin className="w-5 h-5" /> Adresa doručenia
             </h2>
-            
-            {favoriteAddresses.length > 0 && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Obľúbené adresy:</p>
-                <div className="flex flex-wrap gap-2">
-                  {favoriteAddresses.map(addr => (
-                    <button key={addr.id} type="button" onClick={() => setFormData({...formData, pickup_address: addr.address})}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-white">
-                      <Star className="w-3 h-3 text-yellow-500" /> {addr.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-500 dark:text-gray-400 mb-1 block">Adresa vyzdvihnutia *</label>
-                <input type="text" placeholder="Ulica, číslo, mesto" value={formData.pickup_address} onChange={e => setFormData({...formData, pickup_address: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
-                <input type="text" placeholder="Poznámka k vyzdvihnutiu (poschodie, zvonček...)" value={formData.pickup_notes} onChange={e => setFormData({...formData, pickup_notes: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl mt-2" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-500 dark:text-gray-400 mb-1 block">Adresa doručenia *</label>
-                <input type="text" placeholder="Ulica, číslo, mesto" value={formData.delivery_address} onChange={e => setFormData({...formData, delivery_address: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
-                <input type="text" placeholder="Poznámka k doručeniu (poschodie, zvonček...)" value={formData.delivery_notes} onChange={e => setFormData({...formData, delivery_notes: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl mt-2" />
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input type="text" placeholder="Firma (voliteľné)" value={formData.delivery_company} onChange={e => setFormData({...formData, delivery_company: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
+              <input type="text" placeholder="Meno *" value={formData.delivery_name} onChange={e => setFormData({...formData, delivery_name: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="text" placeholder="Priezvisko *" value={formData.delivery_surname} onChange={e => setFormData({...formData, delivery_surname: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="text" placeholder="Ulica a číslo *" value={formData.delivery_street} onChange={e => setFormData({...formData, delivery_street: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="text" placeholder="Mesto *" value={formData.delivery_city} onChange={e => setFormData({...formData, delivery_city: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="text" placeholder="PSČ *" value={formData.delivery_postal} onChange={e => setFormData({...formData, delivery_postal: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <select value={formData.delivery_country} onChange={e => setFormData({...formData, delivery_country: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl">
+                <option value="Slovensko">Slovensko</option>
+                <option value="Česko">Česko</option>
+                <option value="Rakúsko">Rakúsko</option>
+                <option value="Maďarsko">Maďarsko</option>
+                <option value="Poľsko">Poľsko</option>
+              </select>
+              <input type="tel" placeholder="Telefón *" value={formData.delivery_phone} onChange={e => setFormData({...formData, delivery_phone: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
+              <input type="email" placeholder="Email (notifikácie)" value={formData.delivery_email} onChange={e => setFormData({...formData, delivery_email: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
+              <input type="text" placeholder="PIN kód pre prevzatie" value={formData.delivery_pin} onChange={e => setFormData({...formData, delivery_pin: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
+              <textarea placeholder="Poznámky (poschodie, zvonček...)" value={formData.delivery_notes} onChange={e => setFormData({...formData, delivery_notes: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" rows={2} />
             </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">Príjemca dostane SMS/email s tracking linkom</p>
           </div>
 
           {/* Typ zásielky */}
