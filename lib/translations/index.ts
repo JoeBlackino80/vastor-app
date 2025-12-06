@@ -219,6 +219,10 @@ export const translations = {
       avgDelivery: 'Average delivery time',
       deliveredPackages: 'Delivered packages',
       successRate: 'Success rate',
+      expressDelivery: 'Express delivery',
+      expressTime: 'under 60 min',
+      realtimeTracking: 'Real-time tracking',
+      trackingDesc: 'Know exactly where your courier is',
     },
     services: {
       title: 'What we deliver',
@@ -311,6 +315,10 @@ export const translations = {
       avgDelivery: 'Durchschnittliche Lieferzeit',
       deliveredPackages: 'Gelieferte Pakete',
       successRate: 'Erfolgsrate',
+      expressDelivery: 'Express-Lieferung',
+      expressTime: 'unter 60 Min',
+      realtimeTracking: 'Echtzeit-Tracking',
+      trackingDesc: 'Wissen Sie genau, wo Ihr Kurier ist',
     },
     services: {
       title: 'Was wir liefern',
