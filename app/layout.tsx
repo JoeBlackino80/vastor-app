@@ -1,4 +1,5 @@
 import './globals.css'
+import ChatButton from '@/components/ChatButton'
 import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
@@ -63,6 +64,7 @@ export default function RootLayout({
       </head>
       <body className="bg-white dark:bg-gray-900 text-black dark:text-white transition-colors">
         {children}
+        <ChatButton />
       </body>
     </html>
   )
