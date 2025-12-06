@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import LocationMap from '@/components/LocationMap'
-import { Package, Clock, MapPin, Shield, ArrowRight, Phone, Mail, User, FileText, ShoppingCart, Zap, ChevronRight } from 'lucide-react'
+import { Package, Clock, MapPin, Shield, ArrowRight, Phone, Mail, User, FileText, ShoppingCart, Zap, ChevronRight, Store, Scale, Building, Wrench, Heart } from 'lucide-react'
 import { useTranslation } from '@/lib/useTranslation'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSelector from '@/components/LanguageSelector'
@@ -141,6 +141,50 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-bold mb-2 dark:text-white">{t.services.express}</h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm">{t.services.expressDesc}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      {/* For Whom */}
+      <section className="py-20 px-6 dark:bg-gray-900">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">B2B</p>
+            <h2 className="text-4xl font-bold mb-4 dark:text-white">{t.forWhom.title}</h2>
+            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">{t.forWhom.subtitle}</p>
+          </div>
+          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl text-center hover:shadow-lg transition-shadow">
+              <Store className="w-8 h-8 mx-auto mb-3 text-gray-700 dark:text-white" />
+              <h3 className="font-bold mb-1 dark:text-white">{t.forWhom.shops}</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">{t.forWhom.shopsDesc}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl text-center hover:shadow-lg transition-shadow">
+              <ShoppingCart className="w-8 h-8 mx-auto mb-3 text-gray-700 dark:text-white" />
+              <h3 className="font-bold mb-1 dark:text-white">{t.forWhom.eshops}</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">{t.forWhom.eshopsDesc}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl text-center hover:shadow-lg transition-shadow">
+              <Scale className="w-8 h-8 mx-auto mb-3 text-gray-700 dark:text-white" />
+              <h3 className="font-bold mb-1 dark:text-white">{t.forWhom.lawyers}</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">{t.forWhom.lawyersDesc}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl text-center hover:shadow-lg transition-shadow">
+              <Building className="w-8 h-8 mx-auto mb-3 text-gray-700 dark:text-white" />
+              <h3 className="font-bold mb-1 dark:text-white">{t.forWhom.offices}</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">{t.forWhom.officesDesc}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl text-center hover:shadow-lg transition-shadow">
+              <Wrench className="w-8 h-8 mx-auto mb-3 text-gray-700 dark:text-white" />
+              <h3 className="font-bold mb-1 dark:text-white">{t.forWhom.services}</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">{t.forWhom.servicesDesc}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl text-center hover:shadow-lg transition-shadow">
+              <Heart className="w-8 h-8 mx-auto mb-3 text-gray-700 dark:text-white" />
+              <h3 className="font-bold mb-1 dark:text-white">{t.forWhom.healthcare}</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">{t.forWhom.healthcareDesc}</p>
             </div>
           </div>
         </div>

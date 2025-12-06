@@ -39,6 +39,24 @@ export const translations = {
       express: 'Express',
       expressDesc: 'Laboratórne vzorky, urgentné dokumenty. Garantovaný čas.',
     },
+    // For whom
+    forWhom: {
+      title: 'Pre koho je VORU',
+      subtitle: 'Špecializujeme sa na B2B klientov, ktorí potrebujú rýchle a spoľahlivé doručenie.',
+      shops: 'Obchody',
+      shopsDesc: 'Rýchle doručenie tovaru zákazníkom v meste.',
+      eshops: 'E-shopy',
+      eshopsDesc: 'Same-day doručenie pre vaše online objednávky.',
+      lawyers: 'Právnici',
+      lawyersDesc: 'Bezpečné doručenie zmlúv a právnych dokumentov.',
+      offices: 'Kancelárie',
+      officesDesc: 'Expresné doručenie dokumentov medzi pobočkami.',
+      services: 'Servisy',
+      servicesDesc: 'Preprava náhradných dielov a opravených zariadení.',
+      healthcare: 'Zdravotníctvo',
+      healthcareDesc: 'Urgentné doručenie vzoriek a liekov.',
+    },
+
     // How it works
     howItWorks: {
       title: 'Ako to funguje',
@@ -140,6 +158,24 @@ export const translations = {
       express: 'Express',
       expressDesc: 'Laboratorní vzorky, urgentní dokumenty. Garantovaný čas.',
     },
+    // For whom
+    forWhom: {
+      title: 'Pro koho je VORU',
+      subtitle: 'Specializujeme se na B2B klienty, kteří potřebují rychlé a spolehlivé doručení.',
+      shops: 'Obchody',
+      shopsDesc: 'Rychlé doručení zboží zákazníkům ve městě.',
+      eshops: 'E-shopy',
+      eshopsDesc: 'Same-day doručení pro vaše online objednávky.',
+      lawyers: 'Právníci',
+      lawyersDesc: 'Bezpečné doručení smluv a právních dokumentů.',
+      offices: 'Kanceláře',
+      officesDesc: 'Expresní doručení dokumentů mezi pobočkami.',
+      services: 'Servisy',
+      servicesDesc: 'Přeprava náhradních dílů a opravených zařízení.',
+      healthcare: 'Zdravotnictví',
+      healthcareDesc: 'Urgentní doručení vzorků a léků.',
+    },
+
     howItWorks: {
       title: 'Jak to funguje',
       subtitle: 'Objednání kurýra je jednoduché. Tři kroky a vaše zásilka je na cestě.',
@@ -236,6 +272,8 @@ export const translations = {
       express: 'Express',
       expressDesc: 'Laboratory samples, urgent documents. Guaranteed time.',
     },
+    forWhom: { title: 'Who is VORU for', subtitle: 'We specialize in B2B clients who need fast and reliable delivery.', shops: 'Shops', shopsDesc: 'Fast delivery of goods to customers in the city.', eshops: 'E-shops', eshopsDesc: 'Same-day delivery for your online orders.', lawyers: 'Lawyers', lawyersDesc: 'Secure delivery of contracts and legal documents.', offices: 'Offices', officesDesc: 'Express delivery of documents between branches.', services: 'Service centers', servicesDesc: 'Transport of spare parts and repaired devices.', healthcare: 'Healthcare', healthcareDesc: 'Urgent delivery of samples and medications.' },
+
     howItWorks: {
       title: 'How it works',
       subtitle: 'Ordering a courier is simple. Three steps and your package is on its way.',
@@ -332,6 +370,8 @@ export const translations = {
       express: 'Express',
       expressDesc: 'Laborproben, dringende Dokumente. Garantierte Zeit.',
     },
+    forWhom: { title: 'Für wen ist VORU', subtitle: 'Wir sind auf B2B-Kunden spezialisiert, die schnelle und zuverlässige Lieferung benötigen.', shops: 'Geschäfte', shopsDesc: 'Schnelle Lieferung von Waren an Kunden in der Stadt.', eshops: 'E-Shops', eshopsDesc: 'Same-Day-Lieferung für Ihre Online-Bestellungen.', lawyers: 'Anwälte', lawyersDesc: 'Sichere Lieferung von Verträgen und Rechtsdokumenten.', offices: 'Büros', officesDesc: 'Express-Lieferung von Dokumenten zwischen Filialen.', services: 'Servicezentren', servicesDesc: 'Transport von Ersatzteilen und reparierten Geräten.', healthcare: 'Gesundheitswesen', healthcareDesc: 'Dringende Lieferung von Proben und Medikamenten.' },
+
     howItWorks: {
       title: 'Wie es funktioniert',
       subtitle: 'Einen Kurier zu bestellen ist einfach. Drei Schritte und Ihr Paket ist unterwegs.',
