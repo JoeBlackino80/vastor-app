@@ -100,7 +100,16 @@ function OrderForm() {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, price })
+        body: JSON.stringify({
+          ...formData,
+          price,
+          pickup_address: `${formData.pickup_street}, ${formData.pickup_postal} ${formData.pickup_city}, ${formData.pickup_country}`,
+          delivery_address: `${formData.delivery_street}, ${formData.delivery_postal} ${formData.delivery_city}, ${formData.delivery_country}`,
+          recipient_name: formData.delivery_name,
+          recipient_surname: formData.delivery_surname,
+          recipient_phone: formData.delivery_phone,
+          recipient_email: formData.delivery_email
+        })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
