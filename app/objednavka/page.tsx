@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
-import Turnstile from '@/components/Turnstile' from 'react'
+import Turnstile from '@/components/Turnstile'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Package, FileText, ShoppingBag, MapPin, Clock, Crown, CheckCircle, Star, User, Building2 } from 'lucide-react'
