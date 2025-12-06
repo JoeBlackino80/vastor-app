@@ -42,7 +42,6 @@ function OrderForm() {
     delivery_phone: '',
     delivery_email: '',
     delivery_notes: '',
-    delivery_pin: '',
     // Objednávka
     order_notes: '',
     package_type: 'document',
@@ -214,7 +213,6 @@ function OrderForm() {
               </select>
               <input type="tel" placeholder="Telefón *" value={formData.delivery_phone} onChange={e => setFormData({...formData, delivery_phone: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
               <input type="email" placeholder="Email (notifikácie)" value={formData.delivery_email} onChange={e => setFormData({...formData, delivery_email: e.target.value})} className="px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
-              <input type="text" placeholder="PIN kód pre prevzatie" value={formData.delivery_pin} onChange={e => setFormData({...formData, delivery_pin: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
               <textarea placeholder="Poznámky (poschodie, zvonček...)" value={formData.delivery_notes} onChange={e => setFormData({...formData, delivery_notes: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" rows={2} />
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">Príjemca dostane SMS/email s tracking linkom</p>
