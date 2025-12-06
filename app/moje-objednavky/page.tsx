@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Package, MapPin, Eye, RotateCcw, Image } from 'lucide-react'
+import { ArrowLeft, Package, MapPin, Eye, RotateCcw, Image, Download } from 'lucide-react'
 
 export default function MyOrders() {
   const router = useRouter()
@@ -47,6 +47,27 @@ export default function MyOrders() {
     router.push('/objednavka?reorder=true')
   }
 
+  const exportCSV = () => {
+    const headers = ["ID","Dátum","Stav","Odkiaľ","Kam","Typ","Cena"]
+    const rows = orders.map(o => [
+      o.id,
+      new Date(o.created_at).toLocaleDateString("sk"),
+      o.status,
+      o.pickup_address,
+      o.delivery_address,
+      o.package_type,
+      o.price || 0
+    ])
+    const csv = [headers, ...rows].map(r => r.join(";")).join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `objednavky-${new Date().toISOString().split("T")[0]}.csv`
+    a.click()
+  }
+
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'delivered': return 'bg-green-100 text-green-800'
@@ -79,7 +100,7 @@ export default function MyOrders() {
         <button onClick={() => router.back()} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full mb-4">
           <ArrowLeft className="w-6 h-6 dark:text-white" />
         </button>
-        <h1 className="text-2xl font-bold mb-6 dark:text-white">Moje objednávky</h1>
+        <div className="flex items-center justify-between mb-6"><h1 className="text-2xl font-bold dark:text-white">Moje objednávky</h1>{orders.length > 0 && (<button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-sm font-medium dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"><Download className="w-4 h-4" />Export CSV</button>)}</div>
 
         {!customer ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center shadow-sm">
