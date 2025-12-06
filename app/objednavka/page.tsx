@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
+import Turnstile from '@/components/Turnstile' from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Package, FileText, ShoppingBag, MapPin, Clock, Crown, CheckCircle, Star, User, Building2 } from 'lucide-react'
@@ -14,6 +15,7 @@ function OrderForm() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [finalPrice, setFinalPrice] = useState(0)
   const [error, setError] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
   
   const [formData, setFormData] = useState({
     // Odosielateľ
@@ -79,7 +81,6 @@ function OrderForm() {
   }, [isReorder])
 
   const fetchFavoriteAddresses = async (customerId: string) => {
-    try {
       const res = await fetch(`/api/favorite-addresses?customer_id=${customerId}`)
       const data = await res.json()
       setFavoriteAddresses(data.addresses || [])
@@ -96,6 +97,16 @@ function OrderForm() {
     setIsSubmitting(true)
     setError('')
     try {
+
+      // Verify Turnstile
+      const verifyRes = await fetch('/api/verify-turnstile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: turnstileToken })
+      })
+      if (!verifyRes.ok) {
+        throw new Error('Verifikácia zlyhala.')
+      }
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -315,7 +326,8 @@ function OrderForm() {
               <span className="text-gray-400">Celková cena</span>
               <span className="text-3xl font-bold">{price.toFixed(2)} €</span>
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-white text-black font-semibold rounded-xl disabled:opacity-50">
+            <Turnstile onVerify={setTurnstileToken} />
+            <button type="submit" disabled={isSubmitting || !turnstileToken} className="w-full py-4 bg-white text-black font-semibold rounded-xl disabled:opacity-50">
               {isSubmitting ? 'Odosielam...' : 'Odoslať objednávku'}
             </button>
           </div>
