@@ -24,8 +24,8 @@ export default function Home() {
       <nav className="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md z-50 border-b border-gray-100 dark:border-gray-800">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="voru" className="h-[80px] w-auto" />
-            <span className="text-xl font-bold dark:text-white">voru</span>
+            <img src="/logo.png" alt="voru" className="h-[120px] w-auto" />
+            
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#sluzby" className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white">{t.nav.services}</a>
