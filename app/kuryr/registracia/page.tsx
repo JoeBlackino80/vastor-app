@@ -553,7 +553,6 @@ export default function CourierRegistration() {
               >
                 Spat
               </button>
-              </>
             )}
             
             {step < 6 ? (
