@@ -11,7 +11,7 @@ export default function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50 py-5 bg-white/95 backdrop-blur-xl border-b border-gray-200">
       <div className="max-w-[1200px] mx-auto px-6 md:px-12 flex justify-between items-center">
         <Link href="/">
-  <img src="/logo.png" alt="voru" style={{height: "60px"}} />
+  <img src="/logo.png" alt="voru" style={{height: "100px"}} />
 </Link>
 
         <ul className="hidden md:flex gap-10 list-none">
