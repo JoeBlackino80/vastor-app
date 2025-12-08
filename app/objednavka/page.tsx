@@ -167,22 +167,10 @@ function OrderForm() {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Kontaktné údaje odosielateľa */}
+          {/* Odosielateľ */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
             <h2 className="font-bold mb-4 dark:text-white flex items-center gap-2">
-              <User className="w-5 h-5" /> Odosielateľ
-            </h2>
-            <div className="space-y-4">
-              <input type="text" placeholder="Meno a priezvisko *" value={formData.customer_name} onChange={e => setFormData({...formData, customer_name: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
-              <input type="email" placeholder="Email *" value={formData.customer_email} onChange={e => setFormData({...formData, customer_email: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
-              <input type="tel" placeholder="Telefón *" value={formData.customer_phone} onChange={e => setFormData({...formData, customer_phone: e.target.value})} className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" required />
-            </div>
-          </div>
-
-          {/* Adresa vyzdvihnutia */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <h2 className="font-bold mb-4 dark:text-white flex items-center gap-2">
-              <MapPin className="w-5 h-5" /> Adresa vyzdvihnutia
+              <MapPin className="w-5 h-5" /> Odosielateľ
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <input type="text" placeholder="Firma (voliteľné)" value={formData.pickup_company} onChange={e => setFormData({...formData, pickup_company: e.target.value})} className="col-span-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl" />
