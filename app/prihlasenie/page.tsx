@@ -1,4 +1,5 @@
 'use client'
+import Turnstile from '@/components/Turnstile'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -13,10 +14,11 @@ export default function CustomerLogin() {
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
 
   const sendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email) return
+    if (!email || !turnstileToken) return
     setIsLoading(true)
     setError('')
 
@@ -98,9 +100,10 @@ export default function CustomerLogin() {
                 autoFocus
               />
             </div>
+            <Turnstile onVerify={setTurnstileToken} />
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !turnstileToken}
               className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50"
             >
               {isLoading ? 'Posielam...' : 'Poslať prihlasovací kód'}
@@ -148,6 +151,3 @@ export default function CustomerLogin() {
     </div>
   )
 }
-// OTP v2
-// deploy 1765401381
-// deploy 1765401880
