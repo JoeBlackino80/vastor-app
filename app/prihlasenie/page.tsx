@@ -1,37 +1,70 @@
 'use client'
-import Turnstile from '@/components/Turnstile'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Lock, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Mail, AlertCircle, KeyRound } from 'lucide-react'
+
+const SUPABASE_URL = 'https://nkxnkcsvtqbbczhnpokt.supabase.co'
 
 export default function CustomerLogin() {
   const router = useRouter()
+  const [step, setStep] = useState<'email' | 'code'>('email')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [code, setCode] = useState('')
   const [error, setError] = useState('')
-  const [turnstileToken, setTurnstileToken] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const sendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!email) return
     setIsLoading(true)
     setError('')
+
     try {
-      const res = await fetch('/api/customer-login', {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: email.trim().toLowerCase() })
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      localStorage.setItem('customer', JSON.stringify(data.customer))
-      router.push('/moj-ucet')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Prihlásenie zlyhalo')
-    } finally {
-      setIsLoading(false)
+
+      if (data.ok) {
+        setStep('code')
+      } else {
+        setError('Nepodarilo sa odoslať kód')
+      }
+    } catch {
+      setError('Chyba pripojenia')
     }
+    setIsLoading(false)
+  }
+
+  const verifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!code) return
+    setIsLoading(true)
+    setError('')
+
+    try {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim() })
+      })
+      const data = await res.json()
+
+      if (data.ok) {
+        localStorage.setItem('customer', JSON.stringify({ email }))
+        router.push('/moj-ucet')
+      } else {
+        if (data.reason === 'invalid_code') setError('Nesprávny kód')
+        else if (data.reason === 'expired') { setError('Kód vypršal'); setStep('email') }
+        else setError('Overenie zlyhalo')
+      }
+    } catch {
+      setError('Chyba pripojenia')
+    }
+    setIsLoading(false)
   }
 
   return (
@@ -41,38 +74,75 @@ export default function CustomerLogin() {
           <ArrowLeft className="w-6 h-6" />
         </button>
         <h1 className="text-2xl font-bold mb-2">Prihlásenie</h1>
-        <p className="text-gray-600 mb-8">Prihláste sa do svojho účtu</p>
+        <p className="text-gray-600 mb-8">
+          {step === 'email' ? 'Zadajte svoj e-mail' : 'Zadajte kód z e-mailu'}
+        </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl" required />
+        {error && (
+          <div className="flex items-center gap-2 text-red-500 text-sm mb-4 p-3 bg-red-50 rounded-xl">
+            <AlertCircle className="w-4 h-4" /> {error}
           </div>
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input type="password" placeholder="Heslo" value={password} onChange={e => setPassword(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl" required />
-          </div>
+        )}
 
-          <div className="text-right">
-            <Link href="/zabudnute-heslo" className="text-sm text-gray-500 hover:text-black">
-              Zabudli ste heslo?
-            </Link>
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 text-red-500 text-sm">
-              <AlertCircle className="w-4 h-4" /> {error}
+        {step === 'email' ? (
+          <form onSubmit={sendOtp} className="space-y-4">
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="email"
+                placeholder="vas@email.sk"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl"
+                required
+                autoFocus
+              />
             </div>
-          )}
-
-          <Turnstile onVerify={setTurnstileToken} />
-          <button type="submit" disabled={isLoading || !turnstileToken} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
-            {isLoading ? 'Prihlasujem...' : 'Prihlásiť sa'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50"
+            >
+              {isLoading ? 'Posielam...' : 'Poslať prihlasovací kód'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={verifyOtp} className="space-y-4">
+            <p className="text-sm text-gray-500 mb-4">
+              Poslali sme 6-miestny kód na <span className="font-medium text-black">{email}</span>
+            </p>
+            <div className="relative">
+              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="000000"
+                value={code}
+                onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest"
+                maxLength={6}
+                required
+                autoFocus
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading || code.length !== 6}
+              className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50"
+            >
+              {isLoading ? 'Overujem...' : 'Prihlásiť sa'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStep('email'); setCode(''); setError('') }}
+              className="w-full text-gray-500 text-sm hover:text-black"
+            >
+              ← Zmeniť e-mail
+            </button>
+          </form>
+        )}
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          Nemáte účet? <Link href="/registracia" className="text-black underline">Registrovať sa</Link>
+          Ešte nemáte účet? <Link href="/registracia" className="text-black underline">Registrovať sa</Link>
         </p>
       </div>
     </div>
