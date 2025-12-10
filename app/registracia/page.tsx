@@ -1,9 +1,10 @@
 'use client'
-import Turnstile from '@/components/Turnstile'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, User, Building2, Mail, Lock, Phone, MapPin, CheckCircle, AlertCircle } from 'lucide-react'
+import { ArrowLeft, User, Building2, Mail, Phone, CheckCircle, AlertCircle, KeyRound } from 'lucide-react'
+
+const SUPABASE_URL = 'https://nkxnkcsvtqbbczhnpokt.supabase.co'
 
 export default function CustomerRegistration() {
   const router = useRouter()
@@ -11,41 +12,88 @@ export default function CustomerRegistration() {
   const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [turnstileToken, setTurnstileToken] = useState('')
   const [success, setSuccess] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
+  
   const [formData, setFormData] = useState({
-    email: '', password: '', confirmPassword: '', phone: '',
+    email: '', phone: '',
     street: '', city: '', postal_code: '', country: 'Slovensko',
     first_name: '', last_name: '',
     company_name: '', ico: '', dic: '', ic_dph: ''
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (formData.password !== formData.confirmPassword) {
-      setError('Heslá sa nezhodujú')
-      return
-    }
-    if (formData.password.length < 6) {
-      setError('Heslo musí mať aspoň 6 znakov')
+  const sendOtp = async () => {
+    if (!formData.email) {
+      setError('Vyplňte email')
       return
     }
     setIsSubmitting(true)
     setError('')
+
     try {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email.trim().toLowerCase() })
+      })
+      const data = await res.json()
+
+      if (data.ok) {
+        setOtpSent(true)
+      } else {
+        setError('Nepodarilo sa odoslať kód')
+      }
+    } catch {
+      setError('Chyba pripojenia')
+    }
+    setIsSubmitting(false)
+  }
+
+  const verifyAndRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (otpCode.length !== 6) return
+    
+    setIsSubmitting(true)
+    setError('')
+
+    try {
+      // First verify OTP
+      const verifyRes = await fetch(SUPABASE_URL + '/functions/v1/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: formData.email.trim().toLowerCase(), 
+          code: otpCode.trim() 
+        })
+      })
+      const verifyData = await verifyRes.json()
+
+      if (!verifyData.ok) {
+        if (verifyData.reason === 'invalid_code') setError('Nesprávny kód')
+        else if (verifyData.reason === 'expired') setError('Kód vypršal, skúste znova')
+        else setError('Overenie zlyhalo')
+        setIsSubmitting(false)
+        return
+      }
+
+      // OTP verified, now register
       const res = await fetch('/api/customer-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, account_type: accountType })
       })
       const data = await res.json()
+      
       if (!res.ok) throw new Error(data.error)
+      
+      // Auto-login after registration
+      localStorage.setItem('customer', JSON.stringify(data.customer))
       setSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registrácia zlyhala')
-    } finally {
-      setIsSubmitting(false)
     }
+    setIsSubmitting(false)
   }
 
   if (success) {
@@ -56,9 +104,9 @@ export default function CustomerRegistration() {
             <CheckCircle className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold mb-2">Registrácia úspešná!</h1>
-          <p className="text-gray-600 mb-6">Teraz sa môžete prihlásiť.</p>
-          <Link href="/prihlasenie" className="block w-full py-4 bg-black text-white rounded-xl font-semibold">
-            Prihlásiť sa
+          <p className="text-gray-600 mb-6">Váš účet bol vytvorený.</p>
+          <Link href="/moj-ucet" className="block w-full py-4 bg-black text-white rounded-xl font-semibold">
+            Prejsť do účtu
           </Link>
         </div>
       </div>
@@ -79,81 +127,136 @@ export default function CustomerRegistration() {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {step === 1 && (
-            <div className="space-y-4">
-              <p className="font-medium mb-4">Vyberte typ účtu:</p>
-              <button type="button" onClick={() => setAccountType('individual')}
-                className={`w-full p-4 rounded-xl border-2 flex items-center gap-4 ${accountType === 'individual' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
-                <User className="w-6 h-6" />
-                <div className="text-left"><p className="font-medium">Pre seba</p><p className="text-sm text-gray-500">Osobné objednávky</p></div>
-              </button>
-              <button type="button" onClick={() => setAccountType('company')}
-                className={`w-full p-4 rounded-xl border-2 flex items-center gap-4 ${accountType === 'company' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
-                <Building2 className="w-6 h-6" />
-                <div className="text-left"><p className="font-medium">Pre firmu</p><p className="text-sm text-gray-500">Firemné objednávky</p></div>
-              </button>
-              <button type="button" onClick={() => setStep(2)} className="w-full py-4 bg-black text-white rounded-xl font-semibold mt-4">
-                Pokračovať
-              </button>
-            </div>
-          )}
+        {error && (
+          <div className="flex items-center gap-2 text-red-500 text-sm mb-4 p-3 bg-red-50 rounded-xl">
+            <AlertCircle className="w-4 h-4" /> {error}
+          </div>
+        )}
 
-          {step === 2 && (
-            <div className="space-y-4">
-              {accountType === 'individual' ? (
-                <>
-                  <input type="text" placeholder="Meno *" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
-                  <input type="text" placeholder="Priezvisko *" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
-                </>
-              ) : (
-                <>
-                  <input type="text" placeholder="Názov spoločnosti *" value={formData.company_name} onChange={e => setFormData({...formData, company_name: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
-                  <input type="text" placeholder="IČO *" value={formData.ico} onChange={e => setFormData({...formData, ico: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
-                  <input type="text" placeholder="DIČ" value={formData.dic} onChange={e => setFormData({...formData, dic: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" />
-                  <input type="text" placeholder="IČ DPH" value={formData.ic_dph} onChange={e => setFormData({...formData, ic_dph: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" />
-                </>
-              )}
-              <div className="pt-2">
-                <p className="text-sm font-medium text-gray-700 mb-2">Adresa</p>
-                <input type="text" placeholder="Ulica a číslo *" value={formData.street} onChange={e => setFormData({...formData, street: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl mb-2" required />
-                <div className="grid grid-cols-2 gap-2">
-                  <input type="text" placeholder="Mesto *" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
-                  <input type="text" placeholder="PSČ *" value={formData.postal_code} onChange={e => setFormData({...formData, postal_code: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
-                </div>
-              </div>
-              <button type="button" onClick={() => setStep(3)} className="w-full py-4 bg-black text-white rounded-xl font-semibold">
-                Pokračovať
-              </button>
-            </div>
-          )}
+        {/* Step 1: Account Type */}
+        {step === 1 && (
+          <div className="space-y-4">
+            <p className="font-medium mb-4">Vyberte typ účtu:</p>
+            <button type="button" onClick={() => setAccountType('individual')}
+              className={`w-full p-4 rounded-xl border-2 flex items-center gap-4 ${accountType === 'individual' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
+              <User className="w-6 h-6" />
+              <div className="text-left"><p className="font-medium">Pre seba</p><p className="text-sm text-gray-500">Osobné objednávky</p></div>
+            </button>
+            <button type="button" onClick={() => setAccountType('company')}
+              className={`w-full p-4 rounded-xl border-2 flex items-center gap-4 ${accountType === 'company' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
+              <Building2 className="w-6 h-6" />
+              <div className="text-left"><p className="font-medium">Pre firmu</p><p className="text-sm text-gray-500">Firemné objednávky</p></div>
+            </button>
+            <button type="button" onClick={() => setStep(2)} className="w-full py-4 bg-black text-white rounded-xl font-semibold mt-4">
+              Pokračovať
+            </button>
+          </div>
+        )}
 
-          {step === 3 && (
-            <div className="space-y-4">
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input type="email" placeholder="Email *" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl" required />
+        {/* Step 2: Personal/Company Info + Address */}
+        {step === 2 && (
+          <div className="space-y-4">
+            {accountType === 'individual' ? (
+              <>
+                <input type="text" placeholder="Meno *" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
+                <input type="text" placeholder="Priezvisko *" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
+              </>
+            ) : (
+              <>
+                <input type="text" placeholder="Názov spoločnosti *" value={formData.company_name} onChange={e => setFormData({...formData, company_name: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
+                <input type="text" placeholder="IČO *" value={formData.ico} onChange={e => setFormData({...formData, ico: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
+                <input type="text" placeholder="DIČ" value={formData.dic} onChange={e => setFormData({...formData, dic: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" />
+                <input type="text" placeholder="IČ DPH" value={formData.ic_dph} onChange={e => setFormData({...formData, ic_dph: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" />
+              </>
+            )}
+            <div className="pt-2">
+              <p className="text-sm font-medium text-gray-700 mb-2">Adresa</p>
+              <input type="text" placeholder="Ulica a číslo *" value={formData.street} onChange={e => setFormData({...formData, street: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl mb-2" required />
+              <div className="grid grid-cols-2 gap-2">
+                <input type="text" placeholder="Mesto *" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
+                <input type="text" placeholder="PSČ *" value={formData.postal_code} onChange={e => setFormData({...formData, postal_code: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl" required />
               </div>
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input type="tel" placeholder="Telefón *" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl" required />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input type="password" placeholder="Heslo *" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl" required />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input type="password" placeholder="Potvrdiť heslo *" value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl" required />
-              </div>
-              {error && <div className="flex items-center gap-2 text-red-500 text-sm"><AlertCircle className="w-4 h-4" />{error}</div>}
-              <Turnstile onVerify={setTurnstileToken} />
-              <button type="submit" disabled={isSubmitting || !turnstileToken} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
-                {isSubmitting ? 'Registrujem...' : 'Registrovať sa'}
-              </button>
             </div>
-          )}
-        </form>
+            <button type="button" onClick={() => {
+              if (accountType === 'individual' && (!formData.first_name || !formData.last_name)) {
+                setError('Vyplňte meno a priezvisko')
+                return
+              }
+              if (accountType === 'company' && (!formData.company_name || !formData.ico)) {
+                setError('Vyplňte názov spoločnosti a IČO')
+                return
+              }
+              if (!formData.street || !formData.city || !formData.postal_code) {
+                setError('Vyplňte adresu')
+                return
+              }
+              setError('')
+              setStep(3)
+            }} className="w-full py-4 bg-black text-white rounded-xl font-semibold">
+              Pokračovať
+            </button>
+          </div>
+        )}
+
+        {/* Step 3: Contact + OTP Verification */}
+        {step === 3 && !otpSent && (
+          <div className="space-y-4">
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input type="email" placeholder="Email *" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl" required />
+            </div>
+            <div className="relative">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input type="tel" placeholder="Telefón *" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl" required />
+            </div>
+            <button type="button" onClick={() => {
+              if (!formData.email || !formData.phone) {
+                setError('Vyplňte email a telefón')
+                return
+              }
+              setError('')
+              sendOtp()
+            }} disabled={isSubmitting} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
+              {isSubmitting ? 'Posielam...' : 'Overiť email'}
+            </button>
+          </div>
+        )}
+
+        {/* Step 3b: OTP Code Entry */}
+        {step === 3 && otpSent && (
+          <form onSubmit={verifyAndRegister} className="space-y-4">
+            <p className="text-sm text-gray-500 mb-4">
+              Poslali sme 6-miestny kód na <span className="font-medium text-black">{formData.email}</span>
+            </p>
+            <div className="relative">
+              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="000000"
+                value={otpCode}
+                onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest"
+                maxLength={6}
+                required
+                autoFocus
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting || otpCode.length !== 6}
+              className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50"
+            >
+              {isSubmitting ? 'Registrujem...' : 'Dokončiť registráciu'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setOtpSent(false); setOtpCode(''); setError('') }}
+              className="w-full text-gray-500 text-sm hover:text-black"
+            >
+              ← Zmeniť údaje
+            </button>
+          </form>
+        )}
 
         <p className="text-center text-gray-500 text-sm mt-6">
           Už máte účet? <Link href="/prihlasenie" className="text-black underline">Prihlásiť sa</Link>
