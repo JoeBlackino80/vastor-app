@@ -1,36 +1,32 @@
 import { NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
 import { supabase } from '@/lib/supabase'
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json()
+    const body = await request.json()
+    const email = body.email?.trim().toLowerCase()
+
+    if (!email) {
+      return NextResponse.json({ message: 'missing_email' }, { status: 400 })
+    }
 
     const { data: courier, error } = await (supabase.from('couriers') as any)
       .select('*')
-      .eq('email', email.toLowerCase().trim())
+      .eq('email', email)
       .single()
 
     if (error || !courier) {
-      return NextResponse.json({ courier: null, message: 'not_found' })
+      return NextResponse.json({ message: 'not_found' })
     }
 
-    if (!courier.password_hash) {
-      return NextResponse.json({ courier: null, message: 'no_password' })
+    // If OTP verified, return courier directly
+    if (body.otp_verified) {
+      return NextResponse.json({ courier })
     }
 
-    const validPassword = await bcrypt.compare(password, courier.password_hash)
-    if (!validPassword) {
-      return NextResponse.json({ courier: null, message: 'wrong_password' })
-    }
-
-    if (courier.status === 'pending') {
-      return NextResponse.json({ courier: null, message: 'pending_approval' })
-    }
-
-    return NextResponse.json({ courier })
+    // Legacy password check (if needed)
+    return NextResponse.json({ message: 'use_otp' })
   } catch (error) {
-    console.error('Login error:', error)
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 })
+    return NextResponse.json({ message: 'error' }, { status: 500 })
   }
 }
