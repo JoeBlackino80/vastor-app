@@ -1,8 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { UserPlus, CheckCircle, Truck, Bike, Car, AlertCircle, KeyRound, Phone } from 'lucide-react'
-import Turnstile from '@/components/Turnstile'
+import { UserPlus, CheckCircle, Truck, Bike, Car, AlertCircle, Phone, Lock, RefreshCw } from 'lucide-react'
 
 const SUPABASE_URL = 'https://nkxnkcsvtqbbczhnpokt.supabase.co'
 
@@ -17,12 +16,20 @@ export default function CourierRegistration() {
     terms_accepted: false, gdpr_accepted: false
   })
   
-  const [emailCode, setEmailCode] = useState('')
   const [smsCode, setSmsCode] = useState('')
+  const [pin, setPin] = useState('')
+  const [pinConfirm, setPinConfirm] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState('')
-  const [turnstileToken, setTurnstileToken] = useState('')
+  const [resendTimer, setResendTimer] = useState(0)
+
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [resendTimer])
 
   const validateStep = (s: number) => {
     setError('')
@@ -31,7 +38,7 @@ export default function CourierRegistration() {
       if (!formData.birth_date) { setError('Vyplňte dátum narodenia'); return false }
     }
     if (s === 2) {
-      if (!formData.email || !formData.phone) { setError('Vyplňte email a telefón'); return false }
+      if (!formData.phone) { setError('Vyplňte telefón'); return false }
       if (!formData.street || !formData.city) { setError('Vyplňte adresu'); return false }
     }
     if (s === 3) {
@@ -49,74 +56,120 @@ export default function CourierRegistration() {
   const nextStep = () => { if (validateStep(step)) setStep(step + 1) }
   const prevStep = () => { setError(''); setStep(step - 1) }
 
-  const sendEmailOtp = async () => {
-    if (!validateStep(4) || !turnstileToken) return
+  const sendSmsOtp = async (isResend = false) => {
+    if (!isResend && !validateStep(4)) return
     setIsSubmitting(true)
     setError('')
+    
     try {
-      const checkRes = await fetch('/api/check-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email.trim().toLowerCase(), type: 'courier' })
-      })
-      const checkData = await checkRes.json()
-      if (checkData.exists) { setError('Email už je registrovaný'); setIsSubmitting(false); return }
+      if (!isResend) {
+        const checkRes = await fetch('/api/check-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: formData.phone, type: 'courier' })
+        })
+        const checkData = await checkRes.json()
+        if (checkData.exists) { 
+          setError('Telefón už je registrovaný'); 
+          setIsSubmitting(false); 
+          return 
+        }
+      }
 
-      const res = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email.trim().toLowerCase() })
-      })
-      if ((await res.json()).ok) setStep(5)
-      else setError('Nepodarilo sa odoslať kód')
-    } catch { setError('Chyba pripojenia') }
-    setIsSubmitting(false)
-  }
-
-  const verifyEmailAndSendSms = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setError('')
-    try {
-      const res = await fetch(SUPABASE_URL + '/functions/v1/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email.trim().toLowerCase(), code: emailCode.trim() })
-      })
-      const data = await res.json()
-      if (!data.ok) { setError(data.reason === 'invalid_code' ? 'Nesprávny kód' : 'Kód vypršal'); setIsSubmitting(false); return }
-
-      const smsRes = await fetch(SUPABASE_URL + '/functions/v1/send-sms', {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: formData.phone })
       })
-      if ((await smsRes.json()).ok) setStep(6)
-      else setError('Nepodarilo sa odoslať SMS')
-    } catch { setError('Chyba pripojenia') }
+      
+      if ((await res.json()).ok) {
+        setSmsCode('')
+        setResendTimer(60)
+        if (!isResend) setStep(5)
+      } else {
+        setError('Nepodarilo sa odoslať SMS')
+      }
+    } catch { 
+      setError('Chyba pripojenia') 
+    }
     setIsSubmitting(false)
   }
 
-  const verifySmsAndRegister = async (e: React.FormEvent) => {
+  const verifySmsOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setError('')
+    
     try {
       const res = await fetch(SUPABASE_URL + '/functions/v1/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.phone, code: smsCode.trim() })
       })
-      if (!(await res.json()).ok) { setError('Nesprávny SMS kód'); setIsSubmitting(false); return }
+      const data = await res.json()
+      
+      if (!data.ok) { 
+        setError(data.reason === 'expired' ? 'Kód vypršal' : 'Nesprávny kód'); 
+        setIsSubmitting(false); 
+        return 
+      }
 
+      setStep(6)
+    } catch { 
+      setError('Chyba pripojenia') 
+    }
+    setIsSubmitting(false)
+  }
+
+  const completeRegistration = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    if (pin.length !== 4) {
+      setError('PIN musí mať 4 číslice')
+      return
+    }
+    if (pin !== pinConfirm) {
+      setError('PIN kódy sa nezhodujú')
+      return
+    }
+
+    setIsSubmitting(true)
+    
+    try {
+      // Register courier
       const regRes = await fetch('/api/courier-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
-      if ((await regRes.json()).success) setIsSuccess(true)
-      else setError('Registrácia zlyhala')
-    } catch { setError('Chyba pripojenia') }
+      const regData = await regRes.json()
+      
+      if (!regData.success) {
+        setError(regData.error || 'Registrácia zlyhala')
+        setIsSubmitting(false)
+        return
+      }
+
+      // Set PIN
+      const pinRes = await fetch('/api/pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'set',
+          type: 'courier',
+          phone: formData.phone,
+          pin: pin
+        })
+      })
+      
+      if (!pinRes.ok) throw new Error('Chyba pri nastavení PIN')
+
+      localStorage.setItem('courier_phone', formData.phone)
+      setIsSuccess(true)
+    } catch (err: any) { 
+      setError(err.message || 'Chyba pripojenia') 
+    }
     setIsSubmitting(false)
   }
 
@@ -130,12 +183,14 @@ export default function CourierRegistration() {
             <CheckCircle className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold mb-2">Registrácia odoslaná!</h1>
-          <p className="text-gray-600 mb-4">Vaša žiadosť bude preverená do 24 hodín.</p>
+          <p className="text-gray-600 mb-4">Vaša žiadosť bude preverená do 24 hodín. Po schválení sa môžete prihlásiť pomocou telefónu a PIN.</p>
           <Link href="/kuryr" className="text-black underline">Späť na prihlásenie</Link>
         </div>
       </div>
     )
   }
+
+  const totalSteps = 6
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -147,7 +202,7 @@ export default function CourierRegistration() {
             </div>
             <div>
               <h1 className="text-xl font-bold">Registrácia kuriéra</h1>
-              <p className="text-gray-500 text-sm">Krok {step} z 6</p>
+              <p className="text-gray-500 text-sm">Krok {step} z {totalSteps}</p>
             </div>
           </div>
           <div className="flex gap-1">
@@ -175,8 +230,12 @@ export default function CourierRegistration() {
           {step === 2 && (
             <div className="space-y-4">
               <h2 className="font-bold">Kontakt a adresa</h2>
-              <input type="email" placeholder="Email *" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" />
-              <input type="tel" placeholder="Telefón * (+421...)" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" />
+              <p className="text-sm text-gray-500">Telefón použijete na prihlásenie</p>
+              <div className="relative">
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input type="tel" placeholder="Telefón * (+421...)" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl" />
+              </div>
+              <input type="email" placeholder="Email (voliteľný)" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" />
               <input placeholder="Ulica *" value={formData.street} onChange={e => setFormData({...formData, street: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" />
               <div className="grid grid-cols-2 gap-3">
                 <input placeholder="Mesto *" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="px-4 py-3 bg-gray-100 rounded-xl" />
@@ -207,25 +266,58 @@ export default function CourierRegistration() {
               <input placeholder="IBAN *" value={formData.iban} onChange={e => setFormData({...formData, iban: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" />
               <label className="flex items-start gap-3"><input type="checkbox" checked={formData.terms_accepted} onChange={e => setFormData({...formData, terms_accepted: e.target.checked})} className="mt-1 w-5 h-5" /><span className="text-sm">Súhlasím s VOP *</span></label>
               <label className="flex items-start gap-3"><input type="checkbox" checked={formData.gdpr_accepted} onChange={e => setFormData({...formData, gdpr_accepted: e.target.checked})} className="mt-1 w-5 h-5" /><span className="text-sm">Súhlasím s GDPR *</span></label>
-              <Turnstile onVerify={setTurnstileToken} />
             </div>
           )}
 
           {step === 5 && (
-            <form onSubmit={verifyEmailAndSendSms} className="space-y-4">
-              <h2 className="font-bold">📧 Overenie e-mailu</h2>
-              <p className="text-sm text-gray-500">Kód sme poslali na {formData.email}</p>
-              <input type="text" placeholder="000000" value={emailCode} onChange={e => setEmailCode(e.target.value.replace(/\D/g,'').slice(0,6))} className="w-full px-4 py-4 bg-gray-100 rounded-xl text-center text-2xl tracking-widest" maxLength={6} autoFocus />
-              <button type="submit" disabled={isSubmitting || emailCode.length !== 6} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Overujem...' : 'Overiť'}</button>
+            <form onSubmit={verifySmsOtp} className="space-y-4">
+              <h2 className="font-bold">📱 Overenie telefónu</h2>
+              <p className="text-sm text-gray-500">SMS sme poslali na {maskPhone(formData.phone)}</p>
+              <div className="relative">
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input type="text" placeholder="000000" value={smsCode} onChange={e => setSmsCode(e.target.value.replace(/\D/g,'').slice(0,6))} className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl text-center text-2xl tracking-widest" maxLength={6} autoFocus />
+              </div>
+              <button type="submit" disabled={isSubmitting || smsCode.length !== 6} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Overujem...' : 'Overiť SMS'}</button>
+              <button type="button" onClick={() => sendSmsOtp(true)} disabled={resendTimer > 0 || isSubmitting}
+                className="w-full py-3 text-gray-600 flex items-center justify-center gap-2 disabled:opacity-50">
+                <RefreshCw className={`w-4 h-4 ${isSubmitting ? 'animate-spin' : ''}`} />
+                {resendTimer > 0 ? `Znova odoslať (${resendTimer}s)` : 'Odoslať SMS znova'}
+              </button>
             </form>
           )}
 
           {step === 6 && (
-            <form onSubmit={verifySmsAndRegister} className="space-y-4">
-              <h2 className="font-bold">📱 Overenie telefónu</h2>
-              <p className="text-sm text-gray-500">SMS sme poslali na {maskPhone(formData.phone)}</p>
-              <input type="text" placeholder="000000" value={smsCode} onChange={e => setSmsCode(e.target.value.replace(/\D/g,'').slice(0,6))} className="w-full px-4 py-4 bg-gray-100 rounded-xl text-center text-2xl tracking-widest" maxLength={6} autoFocus />
-              <button type="submit" disabled={isSubmitting || smsCode.length !== 6} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Registrujem...' : 'Dokončiť'}</button>
+            <form onSubmit={completeRegistration} className="space-y-4">
+              <h2 className="font-bold">🔐 Nastavte si PIN</h2>
+              <p className="text-sm text-gray-500">4-miestny PIN pre rýchle prihlásenie</p>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input 
+                  type="password" 
+                  inputMode="numeric"
+                  placeholder="PIN" 
+                  value={pin} 
+                  onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} 
+                  className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl text-center text-2xl tracking-widest" 
+                  maxLength={4} 
+                  autoFocus 
+                />
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input 
+                  type="password"
+                  inputMode="numeric" 
+                  placeholder="Potvrďte PIN" 
+                  value={pinConfirm} 
+                  onChange={e => setPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))} 
+                  className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl text-center text-2xl tracking-widest" 
+                  maxLength={4} 
+                />
+              </div>
+              <button type="submit" disabled={isSubmitting || pin.length !== 4 || pinConfirm.length !== 4} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
+                {isSubmitting ? 'Registrujem...' : 'Dokončiť registráciu'}
+              </button>
             </form>
           )}
 
@@ -235,7 +327,7 @@ export default function CourierRegistration() {
               {step < 4 ? (
                 <button type="button" onClick={nextStep} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold">Ďalej</button>
               ) : (
-                <button type="button" onClick={sendEmailOtp} disabled={isSubmitting || !turnstileToken} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Posielam...' : 'Overiť email'}</button>
+                <button type="button" onClick={() => sendSmsOtp()} disabled={isSubmitting} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Posielam...' : 'Overiť telefón'}</button>
               )}
             </div>
           )}

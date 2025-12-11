@@ -1,14 +1,12 @@
 'use client'
-import Turnstile from '@/components/Turnstile'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Mail, KeyRound, AlertCircle, ArrowLeft, Lock, RefreshCw, MapPin, Package, Pause, Play, LogOut } from 'lucide-react'
+import { Phone, AlertCircle, ArrowLeft, Lock, RefreshCw, MapPin, Package, Pause, Play, LogOut } from 'lucide-react'
 
 export default function CourierPage() {
   const router = useRouter()
-  const [step, setStep] = useState<'email' | 'pin' | 'sms' | 'setpin' | 'dashboard'>('email')
-  const [email, setEmail] = useState('')
+  const [step, setStep] = useState<'phone' | 'pin' | 'sms' | 'setpin' | 'dashboard'>('phone')
   const [phone, setPhone] = useState('')
   const [pin, setPin] = useState('')
   const [newPin, setNewPin] = useState('')
@@ -16,7 +14,6 @@ export default function CourierPage() {
   const [smsCode, setSmsCode] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [resendTimer, setResendTimer] = useState(0)
   const [courier, setCourier] = useState<any>(null)
   const [isOnline, setIsOnline] = useState(false)
@@ -26,13 +23,13 @@ export default function CourierPage() {
     if (saved) {
       const c = JSON.parse(saved)
       setCourier(c)
-      setEmail(c.email)
+      setPhone(c.phone)
       setStep('dashboard')
     } else {
-      const savedEmail = localStorage.getItem('courier_email')
-      if (savedEmail) {
-        setEmail(savedEmail)
-        checkUserPin(savedEmail)
+      const savedPhone = localStorage.getItem('courier_phone')
+      if (savedPhone) {
+        setPhone(savedPhone)
+        checkUserPin(savedPhone)
       }
     }
   }, [])
@@ -44,23 +41,22 @@ export default function CourierPage() {
     }
   }, [resendTimer])
 
-  const checkUserPin = async (userEmail: string) => {
+  const checkUserPin = async (userPhone: string) => {
     try {
       const res = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'check', email: userEmail, type: 'courier' })
+        body: JSON.stringify({ action: 'check', phone: userPhone, type: 'courier' })
       })
       const data = await res.json()
       
       if (data.exists && data.hasPin) {
         setStep('pin')
-        setPhone(data.phone)
       }
     } catch (err) {}
   }
 
-  const handleEmailSubmit = async () => {
+  const handlePhoneSubmit = async () => {
     setError('')
     setIsSubmitting(true)
     
@@ -68,7 +64,7 @@ export default function CourierPage() {
       const res = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'check', email, type: 'courier' })
+        body: JSON.stringify({ action: 'check', phone, type: 'courier' })
       })
       const data = await res.json()
       
@@ -78,13 +74,12 @@ export default function CourierPage() {
         return
       }
       
-      setPhone(data.phone)
-      localStorage.setItem('courier_email', email)
+      localStorage.setItem('courier_phone', phone)
       
       if (data.hasPin) {
         setStep('pin')
       } else {
-        await sendSms(data.phone)
+        await sendSms()
       }
     } catch (err) {
       setError('Chyba pripojenia')
@@ -93,7 +88,7 @@ export default function CourierPage() {
     }
   }
 
-  const sendSms = async (phoneNumber?: string) => {
+  const sendSms = async () => {
     setError('')
     setIsSubmitting(true)
     
@@ -101,7 +96,7 @@ export default function CourierPage() {
       const res = await fetch('https://nkxnkcsvtqbbczhnpokt.supabase.co/functions/v1/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber || phone })
+        body: JSON.stringify({ phone })
       })
       
       if (!res.ok) throw new Error('SMS error')
@@ -124,7 +119,7 @@ export default function CourierPage() {
       const res = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify', email, pin, type: 'courier' })
+        body: JSON.stringify({ action: 'verify', phone, pin, type: 'courier' })
       })
       const data = await res.json()
       
@@ -153,12 +148,12 @@ export default function CourierPage() {
       const res = await fetch('https://nkxnkcsvtqbbczhnpokt.supabase.co/functions/v1/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code: smsCode })
+        body: JSON.stringify({ email: phone, code: smsCode })
       })
       const data = await res.json()
       
-      if (!data.valid) {
-        setError(data.error === 'expired' ? 'Kód vypršal' : 'Nesprávny kód')
+      if (!data.ok) {
+        setError(data.reason === 'expired' ? 'Kód vypršal' : 'Nesprávny kód')
         setIsSubmitting(false)
         return
       }
@@ -190,7 +185,7 @@ export default function CourierPage() {
       const pinRes = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'set', email, pin: newPin, type: 'courier' })
+        body: JSON.stringify({ action: 'set', phone, pin: newPin, type: 'courier' })
       })
       
       if (!pinRes.ok) throw new Error('Chyba pri ukladaní PIN')
@@ -198,7 +193,7 @@ export default function CourierPage() {
       const loginRes = await fetch('/api/courier-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp_verified: true })
+        body: JSON.stringify({ phone, otp_verified: true })
       })
       const loginData = await loginRes.json()
       
@@ -221,18 +216,18 @@ export default function CourierPage() {
 
   const logout = () => {
     localStorage.removeItem('courier')
-    localStorage.removeItem('courier_email')
+    localStorage.removeItem('courier_phone')
     setCourier(null)
-    setEmail('')
+    setPhone('')
     setPin('')
-    setStep('email')
+    setStep('phone')
   }
 
   const switchAccount = () => {
-    localStorage.removeItem('courier_email')
-    setEmail('')
+    localStorage.removeItem('courier_phone')
+    setPhone('')
     setPin('')
-    setStep('email')
+    setStep('phone')
   }
 
   const maskPhone = (p: string) => p ? p.slice(0, 4) + ' *** ' + p.slice(-3) : ''
@@ -245,7 +240,7 @@ export default function CourierPage() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-xl font-bold">{courier.first_name} {courier.last_name}</h1>
-              <p className="text-gray-400 text-sm">{courier.email}</p>
+              <p className="text-gray-400 text-sm">{maskPhone(courier.phone)}</p>
             </div>
             <button onClick={logout} className="p-2 hover:bg-gray-800 rounded-full">
               <LogOut className="w-5 h-5" />
@@ -285,15 +280,15 @@ export default function CourierPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto p-6">
-        {step !== 'email' && step !== 'pin' && (
-          <button onClick={() => setStep('email')} className="p-2 hover:bg-gray-100 rounded-full mb-4">
+        {(step === 'sms' || step === 'setpin') && (
+          <button onClick={() => setStep('phone')} className="p-2 hover:bg-gray-100 rounded-full mb-4">
             <ArrowLeft className="w-6 h-6" />
           </button>
         )}
         
         <h1 className="text-2xl font-bold mb-2">Kuriér - Prihlásenie</h1>
         <p className="text-gray-600 mb-6">
-          {step === 'email' && 'Zadajte váš email'}
+          {step === 'phone' && 'Zadajte váš telefón'}
           {step === 'pin' && 'Zadajte váš PIN'}
           {step === 'sms' && 'Zadajte kód z SMS'}
           {step === 'setpin' && 'Nastavte si PIN'}
@@ -309,25 +304,23 @@ export default function CourierPage() {
           </div>
         )}
 
-        {step === 'email' && (
+        {step === 'phone' && (
           <div className="space-y-4">
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                type="tel"
+                placeholder="Telefón (+421...)"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl"
                 autoFocus
               />
             </div>
 
-            <Turnstile onVerify={setTurnstileToken} />
-
             <button
-              onClick={handleEmailSubmit}
-              disabled={isSubmitting || !email || !turnstileToken}
+              onClick={handlePhoneSubmit}
+              disabled={isSubmitting || !phone}
               className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50"
             >
               {isSubmitting ? 'Overujem...' : 'Pokračovať'}
@@ -337,7 +330,7 @@ export default function CourierPage() {
 
         {step === 'pin' && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-500 mb-2">{email}</p>
+            <p className="text-sm text-gray-500 mb-2">{maskPhone(phone)}</p>
             
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -379,7 +372,7 @@ export default function CourierPage() {
             </p>
             
             <div className="relative">
-              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="000000"

@@ -1,14 +1,12 @@
 'use client'
-import Turnstile from '@/components/Turnstile'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Mail, KeyRound, AlertCircle, ArrowLeft, Lock, RefreshCw } from 'lucide-react'
+import { Phone, AlertCircle, ArrowLeft, Lock, RefreshCw } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [step, setStep] = useState<'email' | 'pin' | 'sms' | 'setpin'>('email')
-  const [email, setEmail] = useState('')
+  const [step, setStep] = useState<'phone' | 'pin' | 'sms' | 'setpin'>('phone')
   const [phone, setPhone] = useState('')
   const [pin, setPin] = useState('')
   const [newPin, setNewPin] = useState('')
@@ -16,14 +14,12 @@ export default function LoginPage() {
   const [smsCode, setSmsCode] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [resendTimer, setResendTimer] = useState(0)
 
-  // Check if user is already logged in with PIN
   useEffect(() => {
-    const saved = localStorage.getItem('customer_email')
+    const saved = localStorage.getItem('customer_phone')
     if (saved) {
-      setEmail(saved)
+      setPhone(saved)
       checkUserPin(saved)
     }
   }, [])
@@ -35,25 +31,22 @@ export default function LoginPage() {
     }
   }, [resendTimer])
 
-  const checkUserPin = async (userEmail: string) => {
+  const checkUserPin = async (userPhone: string) => {
     try {
       const res = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'check', email: userEmail, type: 'customer' })
+        body: JSON.stringify({ action: 'check', phone: userPhone, type: 'customer' })
       })
       const data = await res.json()
       
       if (data.exists && data.hasPin) {
         setStep('pin')
-        setPhone(data.phone)
       }
-    } catch (err) {
-      // Ignore errors, user will enter email
-    }
+    } catch (err) {}
   }
 
-  const handleEmailSubmit = async () => {
+  const handlePhoneSubmit = async () => {
     setError('')
     setIsSubmitting(true)
     
@@ -61,7 +54,7 @@ export default function LoginPage() {
       const res = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'check', email, type: 'customer' })
+        body: JSON.stringify({ action: 'check', phone, type: 'customer' })
       })
       const data = await res.json()
       
@@ -71,14 +64,12 @@ export default function LoginPage() {
         return
       }
       
-      setPhone(data.phone)
-      localStorage.setItem('customer_email', email)
+      localStorage.setItem('customer_phone', phone)
       
       if (data.hasPin) {
         setStep('pin')
       } else {
-        // No PIN set, need SMS verification first
-        await sendSms(data.phone)
+        await sendSms()
       }
     } catch (err) {
       setError('Chyba pripojenia')
@@ -87,7 +78,7 @@ export default function LoginPage() {
     }
   }
 
-  const sendSms = async (phoneNumber?: string) => {
+  const sendSms = async () => {
     setError('')
     setIsSubmitting(true)
     
@@ -95,7 +86,7 @@ export default function LoginPage() {
       const res = await fetch('https://nkxnkcsvtqbbczhnpokt.supabase.co/functions/v1/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber || phone })
+        body: JSON.stringify({ phone })
       })
       
       if (!res.ok) throw new Error('SMS error')
@@ -118,7 +109,7 @@ export default function LoginPage() {
       const res = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify', email, pin, type: 'customer' })
+        body: JSON.stringify({ action: 'verify', phone, pin, type: 'customer' })
       })
       const data = await res.json()
       
@@ -146,17 +137,16 @@ export default function LoginPage() {
       const res = await fetch('https://nkxnkcsvtqbbczhnpokt.supabase.co/functions/v1/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code: smsCode })
+        body: JSON.stringify({ email: phone, code: smsCode })
       })
       const data = await res.json()
       
-      if (!data.valid) {
-        setError(data.error === 'expired' ? 'Kód vypršal' : 'Nesprávny kód')
+      if (!data.ok) {
+        setError(data.reason === 'expired' ? 'Kód vypršal' : 'Nesprávny kód')
         setIsSubmitting(false)
         return
       }
       
-      // SMS verified, now set PIN
       setStep('setpin')
     } catch (err) {
       setError('Chyba pri overovaní')
@@ -181,20 +171,18 @@ export default function LoginPage() {
     setIsSubmitting(true)
     
     try {
-      // Save PIN
       const pinRes = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'set', email, pin: newPin, type: 'customer' })
+        body: JSON.stringify({ action: 'set', phone, pin: newPin, type: 'customer' })
       })
       
       if (!pinRes.ok) throw new Error('Chyba pri ukladaní PIN')
       
-      // Get user data and login
       const loginRes = await fetch('/api/customer-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp_verified: true })
+        body: JSON.stringify({ phone, otp_verified: true })
       })
       const loginData = await loginRes.json()
       
@@ -217,24 +205,24 @@ export default function LoginPage() {
   const maskPhone = (p: string) => p ? p.slice(0, 4) + ' *** ' + p.slice(-3) : ''
 
   const switchAccount = () => {
-    localStorage.removeItem('customer_email')
-    setEmail('')
+    localStorage.removeItem('customer_phone')
+    setPhone('')
     setPin('')
-    setStep('email')
+    setStep('phone')
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto p-6">
-        {step !== 'email' && step !== 'pin' && (
-          <button onClick={() => setStep('email')} className="p-2 hover:bg-gray-100 rounded-full mb-4">
+        {(step === 'sms' || step === 'setpin') && (
+          <button onClick={() => setStep('phone')} className="p-2 hover:bg-gray-100 rounded-full mb-4">
             <ArrowLeft className="w-6 h-6" />
           </button>
         )}
         
         <h1 className="text-2xl font-bold mb-2">Prihlásenie</h1>
         <p className="text-gray-600 mb-6">
-          {step === 'email' && 'Zadajte váš email'}
+          {step === 'phone' && 'Zadajte váš telefón'}
           {step === 'pin' && 'Zadajte váš PIN'}
           {step === 'sms' && 'Zadajte kód z SMS'}
           {step === 'setpin' && 'Nastavte si PIN'}
@@ -250,26 +238,23 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Step: Email */}
-        {step === 'email' && (
+        {step === 'phone' && (
           <div className="space-y-4">
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                type="tel"
+                placeholder="Telefón (+421...)"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl"
                 autoFocus
               />
             </div>
 
-            <Turnstile onVerify={setTurnstileToken} />
-
             <button
-              onClick={handleEmailSubmit}
-              disabled={isSubmitting || !email || !turnstileToken}
+              onClick={handlePhoneSubmit}
+              disabled={isSubmitting || !phone}
               className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50"
             >
               {isSubmitting ? 'Overujem...' : 'Pokračovať'}
@@ -277,10 +262,9 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Step: PIN */}
         {step === 'pin' && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-500 mb-2">{email}</p>
+            <p className="text-sm text-gray-500 mb-2">{maskPhone(phone)}</p>
             
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -315,7 +299,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Step: SMS Code */}
         {step === 'sms' && (
           <div className="space-y-4">
             <p className="text-sm text-gray-500 mb-4">
@@ -323,7 +306,7 @@ export default function LoginPage() {
             </p>
             
             <div className="relative">
-              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="000000"
@@ -354,7 +337,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Step: Set PIN */}
         {step === 'setpin' && (
           <div className="space-y-4">
             <p className="text-sm text-gray-500 mb-4">
