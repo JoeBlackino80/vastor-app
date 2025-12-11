@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Building2, User, ArrowLeft, CheckCircle, AlertCircle, Phone, RefreshCw, Lock } from 'lucide-react'
 
-// Dev mode - test phone numbers that skip SMS verification
 const DEV_PHONES = ['+421909188881']
 const DEV_CODE = '000000'
 
@@ -28,7 +27,6 @@ export default function RegistrationPage() {
     ico: '',
     dic: '',
     icDph: '',
-    email: '',
     phone: '',
     street: '',
     city: '',
@@ -74,7 +72,6 @@ export default function RegistrationPage() {
     setError('')
     setIsSubmitting(true)
     
-    // Check if dev phone - skip everything
     if (DEV_PHONES.includes(formData.phone)) {
       setIsDevMode(true)
       setSmsCode('')
@@ -85,7 +82,6 @@ export default function RegistrationPage() {
     }
     
     try {
-      // Check if account exists (only for non-dev phones)
       if (!isResend) {
         const checkRes = await fetch('/api/check-account', {
           method: 'POST',
@@ -124,7 +120,6 @@ export default function RegistrationPage() {
     setIsSubmitting(true)
     
     try {
-      // Dev mode - accept 000000
       if (isDevMode && smsCode === DEV_CODE) {
         setStep(5)
         setIsSubmitting(false)
@@ -168,7 +163,6 @@ export default function RegistrationPage() {
     setIsSubmitting(true)
     
     try {
-      // For dev mode, first delete existing account
       if (isDevMode) {
         await fetch('/api/dev-reset', {
           method: 'POST',
@@ -177,7 +171,6 @@ export default function RegistrationPage() {
         })
       }
 
-      // Register the customer
       const res = await fetch('/api/customer-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -190,7 +183,6 @@ export default function RegistrationPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Chyba registrácie')
       
-      // Set the PIN
       const pinRes = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -204,7 +196,6 @@ export default function RegistrationPage() {
       
       if (!pinRes.ok) throw new Error('Chyba pri nastavení PIN')
       
-      // Store for quick login
       localStorage.setItem('customer_phone', formData.phone)
       
       setSuccess(true)
@@ -308,7 +299,6 @@ export default function RegistrationPage() {
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input type="tel" placeholder="Telefón * (napr. +421...)" value={formData.phone} onChange={e => updateForm('phone', e.target.value)} className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl" />
             </div>
-            <input type="email" placeholder="Email (voliteľný)" value={formData.email} onChange={e => updateForm('email', e.target.value)} className="w-full px-4 py-4 bg-white border border-gray-200 rounded-xl" />
           </div>
         )}
 
@@ -340,9 +330,7 @@ export default function RegistrationPage() {
 
         {step === 5 && (
           <form onSubmit={completeRegistration} className="space-y-4">
-            <p className="text-sm text-gray-500 mb-4">
-              Nastavte si 4-miestny PIN pre rýchle prihlásenie
-            </p>
+            <p className="text-sm text-gray-500 mb-4">Nastavte si 4-miestny PIN pre rýchle prihlásenie</p>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input type="password" inputMode="numeric" placeholder="PIN" value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest" maxLength={4} autoFocus />

@@ -3,13 +3,15 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { UserPlus, CheckCircle, Truck, Bike, Car, AlertCircle, Phone, Lock, RefreshCw } from 'lucide-react'
 
+const DEV_PHONES = ['+421909188881']
+const DEV_CODE = '000000'
 const SUPABASE_URL = 'https://nkxnkcsvtqbbczhnpokt.supabase.co'
 
 export default function CourierRegistration() {
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', birth_date: '', nationality: 'SK', id_number: '',
-    email: '', phone: '',
+    phone: '',
     street: '', city: '', postal_code: '',
     vehicle_type: 'bike', drivers_license: '', vehicle_plate: '',
     iban: '', bank_name: '',
@@ -23,6 +25,7 @@ export default function CourierRegistration() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState('')
   const [resendTimer, setResendTimer] = useState(0)
+  const [isDevMode, setIsDevMode] = useState(false)
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -60,6 +63,15 @@ export default function CourierRegistration() {
     if (!isResend && !validateStep(4)) return
     setIsSubmitting(true)
     setError('')
+    
+    if (DEV_PHONES.includes(formData.phone)) {
+      setIsDevMode(true)
+      setSmsCode('')
+      setResendTimer(60)
+      setStep(5)
+      setIsSubmitting(false)
+      return
+    }
     
     try {
       if (!isResend) {
@@ -101,6 +113,12 @@ export default function CourierRegistration() {
     setError('')
     
     try {
+      if (isDevMode && smsCode === DEV_CODE) {
+        setStep(6)
+        setIsSubmitting(false)
+        return
+      }
+
       const res = await fetch(SUPABASE_URL + '/functions/v1/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,7 +155,14 @@ export default function CourierRegistration() {
     setIsSubmitting(true)
     
     try {
-      // Register courier
+      if (isDevMode) {
+        await fetch('/api/dev-reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: formData.phone })
+        })
+      }
+
       const regRes = await fetch('/api/courier-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,7 +176,6 @@ export default function CourierRegistration() {
         return
       }
 
-      // Set PIN
       const pinRes = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -235,7 +259,6 @@ export default function CourierRegistration() {
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input type="tel" placeholder="Telefón * (+421...)" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl" />
               </div>
-              <input type="email" placeholder="Email (voliteľný)" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" />
               <input placeholder="Ulica *" value={formData.street} onChange={e => setFormData({...formData, street: e.target.value})} className="w-full px-4 py-3 bg-gray-100 rounded-xl" />
               <div className="grid grid-cols-2 gap-3">
                 <input placeholder="Mesto *" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="px-4 py-3 bg-gray-100 rounded-xl" />
@@ -272,17 +295,25 @@ export default function CourierRegistration() {
           {step === 5 && (
             <form onSubmit={verifySmsOtp} className="space-y-4">
               <h2 className="font-bold">📱 Overenie telefónu</h2>
-              <p className="text-sm text-gray-500">SMS sme poslali na {maskPhone(formData.phone)}</p>
+              <p className="text-sm text-gray-500">
+                {isDevMode ? (
+                  <span className="text-orange-500">🔧 Test mód - zadajte kód 000000</span>
+                ) : (
+                  <>SMS sme poslali na {maskPhone(formData.phone)}</>
+                )}
+              </p>
               <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input type="text" placeholder="000000" value={smsCode} onChange={e => setSmsCode(e.target.value.replace(/\D/g,'').slice(0,6))} className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl text-center text-2xl tracking-widest" maxLength={6} autoFocus />
               </div>
               <button type="submit" disabled={isSubmitting || smsCode.length !== 6} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Overujem...' : 'Overiť SMS'}</button>
-              <button type="button" onClick={() => sendSmsOtp(true)} disabled={resendTimer > 0 || isSubmitting}
-                className="w-full py-3 text-gray-600 flex items-center justify-center gap-2 disabled:opacity-50">
-                <RefreshCw className={`w-4 h-4 ${isSubmitting ? 'animate-spin' : ''}`} />
-                {resendTimer > 0 ? `Znova odoslať (${resendTimer}s)` : 'Odoslať SMS znova'}
-              </button>
+              {!isDevMode && (
+                <button type="button" onClick={() => sendSmsOtp(true)} disabled={resendTimer > 0 || isSubmitting}
+                  className="w-full py-3 text-gray-600 flex items-center justify-center gap-2 disabled:opacity-50">
+                  <RefreshCw className={`w-4 h-4 ${isSubmitting ? 'animate-spin' : ''}`} />
+                  {resendTimer > 0 ? `Znova odoslať (${resendTimer}s)` : 'Odoslať SMS znova'}
+                </button>
+              )}
             </form>
           )}
 
@@ -292,28 +323,11 @@ export default function CourierRegistration() {
               <p className="text-sm text-gray-500">4-miestny PIN pre rýchle prihlásenie</p>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input 
-                  type="password" 
-                  inputMode="numeric"
-                  placeholder="PIN" 
-                  value={pin} 
-                  onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} 
-                  className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl text-center text-2xl tracking-widest" 
-                  maxLength={4} 
-                  autoFocus 
-                />
+                <input type="password" inputMode="numeric" placeholder="PIN" value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl text-center text-2xl tracking-widest" maxLength={4} autoFocus />
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input 
-                  type="password"
-                  inputMode="numeric" 
-                  placeholder="Potvrďte PIN" 
-                  value={pinConfirm} 
-                  onChange={e => setPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))} 
-                  className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl text-center text-2xl tracking-widest" 
-                  maxLength={4} 
-                />
+                <input type="password" inputMode="numeric" placeholder="Potvrďte PIN" value={pinConfirm} onChange={e => setPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))} className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl text-center text-2xl tracking-widest" maxLength={4} />
               </div>
               <button type="submit" disabled={isSubmitting || pin.length !== 4 || pinConfirm.length !== 4} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
                 {isSubmitting ? 'Registrujem...' : 'Dokončiť registráciu'}
