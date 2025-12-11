@@ -62,10 +62,11 @@ export default function AdminLoginPage() {
     setIsSubmitting(true)
     
     try {
+      // Verify SMS - need both email and phone
       const verifyRes = await fetch('https://nkxnkcsvtqbbczhnpokt.supabase.co/functions/v1/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code: smsCode })
+        body: JSON.stringify({ email, phone, code: smsCode })
       })
       const verifyData = await verifyRes.json()
       
