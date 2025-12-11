@@ -4,6 +4,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Building2, User, ArrowLeft, CheckCircle, AlertCircle, Phone, RefreshCw, Lock } from 'lucide-react'
 
+// Dev mode - test phone numbers that skip SMS verification
+const DEV_PHONES = ['+421909188881']
+const DEV_CODE = '000000'
+
 export default function RegistrationPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
@@ -15,6 +19,7 @@ export default function RegistrationPage() {
   const [pin, setPin] = useState('')
   const [pinConfirm, setPinConfirm] = useState('')
   const [resendTimer, setResendTimer] = useState(0)
+  const [isDevMode, setIsDevMode] = useState(false)
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -85,6 +90,16 @@ export default function RegistrationPage() {
         }
       }
 
+      // Check if dev phone
+      if (DEV_PHONES.includes(formData.phone)) {
+        setIsDevMode(true)
+        setSmsCode('')
+        setResendTimer(60)
+        if (!isResend) setStep(4)
+        setIsSubmitting(false)
+        return
+      }
+
       const res = await fetch('https://nkxnkcsvtqbbczhnpokt.supabase.co/functions/v1/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,6 +124,13 @@ export default function RegistrationPage() {
     setIsSubmitting(true)
     
     try {
+      // Dev mode - accept 000000
+      if (isDevMode && smsCode === DEV_CODE) {
+        setStep(5)
+        setIsSubmitting(false)
+        return
+      }
+
       const res = await fetch('https://nkxnkcsvtqbbczhnpokt.supabase.co/functions/v1/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -173,8 +195,7 @@ export default function RegistrationPage() {
       
       if (!pinRes.ok) throw new Error('Chyba pri nastavení PIN')
       
-      // Store email for quick login
-      localStorage.setItem('customer_email', formData.email)
+      // Store for quick login
       localStorage.setItem('customer_phone', formData.phone)
       
       setSuccess(true)
@@ -289,7 +310,11 @@ export default function RegistrationPage() {
         {step === 4 && (
           <form onSubmit={verifySmsOtp} className="space-y-4">
             <p className="text-sm text-gray-500 mb-4">
-              Poslali sme SMS kód na <span className="font-medium text-black">{maskPhone(formData.phone)}</span>
+              {isDevMode ? (
+                <span className="text-orange-500">🔧 Test mód - zadajte kód 000000</span>
+              ) : (
+                <>Poslali sme SMS kód na <span className="font-medium text-black">{maskPhone(formData.phone)}</span></>
+              )}
             </p>
             <div className="relative">
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -298,11 +323,13 @@ export default function RegistrationPage() {
             <button type="submit" disabled={isSubmitting || smsCode.length !== 6} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
               {isSubmitting ? 'Overujem...' : 'Overiť SMS'}
             </button>
-            <button type="button" onClick={() => sendSmsOtp(true)} disabled={resendTimer > 0 || isSubmitting}
-              className="w-full py-3 text-gray-600 flex items-center justify-center gap-2 disabled:opacity-50">
-              <RefreshCw className={`w-4 h-4 ${isSubmitting ? 'animate-spin' : ''}`} />
-              {resendTimer > 0 ? `Znova odoslať (${resendTimer}s)` : 'Odoslať SMS znova'}
-            </button>
+            {!isDevMode && (
+              <button type="button" onClick={() => sendSmsOtp(true)} disabled={resendTimer > 0 || isSubmitting}
+                className="w-full py-3 text-gray-600 flex items-center justify-center gap-2 disabled:opacity-50">
+                <RefreshCw className={`w-4 h-4 ${isSubmitting ? 'animate-spin' : ''}`} />
+                {resendTimer > 0 ? `Znova odoslať (${resendTimer}s)` : 'Odoslať SMS znova'}
+              </button>
+            )}
           </form>
         )}
 
