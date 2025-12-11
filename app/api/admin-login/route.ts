@@ -6,24 +6,29 @@ export async function POST(request: Request) {
   try {
     const { email, password, step } = await request.json()
     
+    console.log('Admin login attempt:', email, step)
+    
     // Get admin from database
     const { data: admin, error } = await (supabase.from('admins') as any)
       .select('*')
       .eq('email', email.toLowerCase().trim())
       .single()
     
+    console.log('DB result:', { admin: !!admin, error })
+    
     if (error || !admin) {
-      return NextResponse.json({ error: 'Nesprávne údaje' }, { status: 401 })
+      return NextResponse.json({ error: 'Nesprávne údaje', debug: { error, hasAdmin: !!admin } }, { status: 401 })
     }
     
     // Verify password
     const validPassword = await bcrypt.compare(password, admin.password_hash)
+    console.log('Password valid:', validPassword)
+    
     if (!validPassword) {
       return NextResponse.json({ error: 'Nesprávne heslo' }, { status: 401 })
     }
     
     if (step === 'password') {
-      // First step - return phone for SMS
       return NextResponse.json({ 
         success: true, 
         phone: admin.phone 
@@ -31,7 +36,6 @@ export async function POST(request: Request) {
     }
     
     if (step === 'complete') {
-      // Final step - return admin data
       const { password_hash: _, ...safeAdmin } = admin
       return NextResponse.json({ 
         success: true, 
@@ -40,7 +44,8 @@ export async function POST(request: Request) {
     }
     
     return NextResponse.json({ error: 'Neznáma akcia' }, { status: 400 })
-  } catch (error) {
-    return NextResponse.json({ error: 'Chyba servera' }, { status: 500 })
+  } catch (error: any) {
+    console.log('Admin login error:', error)
+    return NextResponse.json({ error: 'Chyba servera', debug: error.message }, { status: 500 })
   }
 }
