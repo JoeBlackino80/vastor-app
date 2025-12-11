@@ -4,17 +4,24 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
   try {
-    const { action, email, pin, type = 'customer' } = await request.json()
+    const { action, email, phone, pin, type = 'customer' } = await request.json()
     
     const table = type === 'courier' ? 'couriers' : 'customers'
     
+    // Use phone if provided, otherwise email
+    const identifierField = phone ? 'phone' : 'email'
+    const identifierValue = phone ? phone.trim() : email?.toLowerCase().trim()
+    
+    if (!identifierValue) {
+      return NextResponse.json({ error: 'Chýba telefón alebo email' }, { status: 400 })
+    }
+    
     if (action === 'set') {
-      // Set new PIN
       const pin_hash = await bcrypt.hash(pin, 10)
       
       const { error } = await (supabase.from(table) as any)
         .update({ pin_hash })
-        .eq('email', email.toLowerCase().trim())
+        .eq(identifierField, identifierValue)
       
       if (error) throw error
       
@@ -22,10 +29,9 @@ export async function POST(request: Request) {
     }
     
     if (action === 'verify') {
-      // Verify PIN
       const { data: user, error } = await (supabase.from(table) as any)
         .select('*')
-        .eq('email', email.toLowerCase().trim())
+        .eq(identifierField, identifierValue)
         .single()
       
       if (error || !user) {
@@ -48,26 +54,27 @@ export async function POST(request: Request) {
     }
     
     if (action === 'check') {
-      // Check if user has PIN set
       const { data: user, error } = await (supabase.from(table) as any)
         .select('id, email, pin_hash, phone')
-        .eq('email', email.toLowerCase().trim())
+        .eq(identifierField, identifierValue)
         .single()
       
       if (error || !user) {
         return NextResponse.json({ exists: false })
       }
       
-      return NextResponse.json({ 
-        exists: true, 
+      return NextResponse.json({
+        exists: true,
         hasPin: !!user.pin_hash,
         phone: user.phone,
+        email: user.email,
         id: user.id
       })
     }
     
     return NextResponse.json({ error: 'Neznáma akcia' }, { status: 400 })
   } catch (error) {
+    console.error('PIN API error:', error)
     return NextResponse.json({ error: 'Chyba servera' }, { status: 500 })
   }
 }
