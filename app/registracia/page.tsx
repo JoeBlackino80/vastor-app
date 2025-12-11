@@ -74,8 +74,18 @@ export default function RegistrationPage() {
     setError('')
     setIsSubmitting(true)
     
+    // Check if dev phone - skip everything
+    if (DEV_PHONES.includes(formData.phone)) {
+      setIsDevMode(true)
+      setSmsCode('')
+      setResendTimer(60)
+      setStep(4)
+      setIsSubmitting(false)
+      return
+    }
+    
     try {
-      // Check if account exists
+      // Check if account exists (only for non-dev phones)
       if (!isResend) {
         const checkRes = await fetch('/api/check-account', {
           method: 'POST',
@@ -88,16 +98,6 @@ export default function RegistrationPage() {
           setIsSubmitting(false)
           return
         }
-      }
-
-      // Check if dev phone
-      if (DEV_PHONES.includes(formData.phone)) {
-        setIsDevMode(true)
-        setSmsCode('')
-        setResendTimer(60)
-        if (!isResend) setStep(4)
-        setIsSubmitting(false)
-        return
       }
 
       const res = await fetch('https://nkxnkcsvtqbbczhnpokt.supabase.co/functions/v1/send-sms', {
@@ -168,6 +168,15 @@ export default function RegistrationPage() {
     setIsSubmitting(true)
     
     try {
+      // For dev mode, first delete existing account
+      if (isDevMode) {
+        await fetch('/api/dev-reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: formData.phone })
+        })
+      }
+
       // Register the customer
       const res = await fetch('/api/customer-register', {
         method: 'POST',
@@ -247,7 +256,6 @@ export default function RegistrationPage() {
           </div>
         )}
 
-        {/* Step 1: Account Type */}
         {step === 1 && (
           <div className="space-y-4">
             <p className="font-medium mb-4">Vyberte typ účtu:</p>
@@ -270,7 +278,6 @@ export default function RegistrationPage() {
           </div>
         )}
 
-        {/* Step 2: Personal/Company Info */}
         {step === 2 && (
           <div className="space-y-4">
             {accountType === 'individual' ? (
@@ -294,7 +301,6 @@ export default function RegistrationPage() {
           </div>
         )}
 
-        {/* Step 3: Phone & Email */}
         {step === 3 && (
           <div className="space-y-4">
             <p className="text-sm text-gray-600 mb-2">Telefón použijete na prihlásenie</p>
@@ -306,7 +312,6 @@ export default function RegistrationPage() {
           </div>
         )}
 
-        {/* Step 4: SMS Verification */}
         {step === 4 && (
           <form onSubmit={verifySmsOtp} className="space-y-4">
             <p className="text-sm text-gray-500 mb-4">
@@ -333,7 +338,6 @@ export default function RegistrationPage() {
           </form>
         )}
 
-        {/* Step 5: Set PIN */}
         {step === 5 && (
           <form onSubmit={completeRegistration} className="space-y-4">
             <p className="text-sm text-gray-500 mb-4">
@@ -341,28 +345,11 @@ export default function RegistrationPage() {
             </p>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input 
-                type="password" 
-                inputMode="numeric"
-                placeholder="PIN" 
-                value={pin} 
-                onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} 
-                className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest" 
-                maxLength={4} 
-                autoFocus 
-              />
+              <input type="password" inputMode="numeric" placeholder="PIN" value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest" maxLength={4} autoFocus />
             </div>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input 
-                type="password"
-                inputMode="numeric" 
-                placeholder="Potvrďte PIN" 
-                value={pinConfirm} 
-                onChange={e => setPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))} 
-                className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest" 
-                maxLength={4} 
-              />
+              <input type="password" inputMode="numeric" placeholder="Potvrďte PIN" value={pinConfirm} onChange={e => setPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))} className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest" maxLength={4} />
             </div>
             <button type="submit" disabled={isSubmitting || pin.length !== 4 || pinConfirm.length !== 4} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
               {isSubmitting ? 'Registrujem...' : 'Dokončiť registráciu'}
@@ -370,7 +357,6 @@ export default function RegistrationPage() {
           </form>
         )}
 
-        {/* Navigation buttons for steps 1-3 */}
         {step <= 3 && (
           <div className="flex gap-3 mt-6">
             {step > 1 && <button type="button" onClick={() => setStep(step - 1)} className="flex-1 py-4 border-2 border-gray-200 rounded-xl font-semibold">Späť</button>}
