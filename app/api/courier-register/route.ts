@@ -4,42 +4,52 @@ import { supabase } from '@/lib/supabase'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const email = body.email.toLowerCase().trim()
+    const phone = body.phone?.trim()
 
-    // Check if email already exists
-    const { data: existing } = await (supabase.from('couriers') as any)
-      .select('id')
-      .eq('email', email)
-      .single()
-
-    if (existing) {
-      return NextResponse.json({ error: 'Email už existuje' }, { status: 400 })
+    if (!phone) {
+      return NextResponse.json({ success: false, error: 'Telefón je povinný' }, { status: 400 })
     }
 
-    // Insert courier (no password, pending approval)
+    // Check if phone exists
+    const { data: existingPhone } = await (supabase.from('couriers') as any)
+      .select('id').eq('phone', phone).single()
+    if (existingPhone) {
+      return NextResponse.json({ success: false, error: 'Telefón už existuje' }, { status: 400 })
+    }
+
+    const courierData: any = {
+      phone,
+      first_name: body.first_name,
+      last_name: body.last_name,
+      birth_date: body.birth_date || null,
+      nationality: body.nationality || 'SK',
+      id_number: body.id_number || null,
+      street: body.street,
+      city: body.city,
+      postal_code: body.postal_code,
+      vehicle_type: body.vehicle_type || 'bike',
+      drivers_license: body.drivers_license || null,
+      vehicle_plate: body.vehicle_plate || null,
+      iban: body.iban,
+      bank_name: body.bank_name || null,
+      terms_accepted: body.terms_accepted || false,
+      gdpr_accepted: body.gdpr_accepted || false,
+      status: 'pending',
+      rating: 5.00,
+      total_deliveries: 0
+    }
+
     const { data: courier, error } = await (supabase.from('couriers') as any)
-      .insert({
-        first_name: body.first_name,
-        last_name: body.last_name,
-        email,
-        phone: body.phone,
-        vehicle_type: body.vehicle_type,
-        status: 'pending',
-        rating: 5.00,
-        total_deliveries: 0,
-        email_verified: true // Verified via OTP
-      })
-      .select()
-      .single()
+      .insert(courierData).select().single()
 
     if (error) {
-      console.error('Registration error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('Courier registration error:', error)
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, courier })
   } catch (error) {
-    console.error('Registration error:', error)
-    return NextResponse.json({ error: 'Registrácia zlyhala' }, { status: 500 })
+    console.error('Courier registration error:', error)
+    return NextResponse.json({ success: false, error: 'Registrácia zlyhala' }, { status: 500 })
   }
 }
