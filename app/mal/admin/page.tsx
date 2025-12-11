@@ -40,7 +40,6 @@ export default function AdminLoginPage() {
       
       setPhone(data.phone)
       
-      // Send SMS
       const smsRes = await fetch('https://nkxnkcsvtqbbczhnpokt.supabase.co/functions/v1/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,21 +61,20 @@ export default function AdminLoginPage() {
     setIsSubmitting(true)
     
     try {
-      // Verify SMS - need both email and phone
+      // Verify SMS - send phone as email (that's how it's stored)
       const verifyRes = await fetch('https://nkxnkcsvtqbbczhnpokt.supabase.co/functions/v1/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, phone, code: smsCode })
+        body: JSON.stringify({ email: phone, code: smsCode })
       })
       const verifyData = await verifyRes.json()
       
-      if (!verifyData.valid) {
-        setError(verifyData.error === 'expired' ? 'Kód vypršal' : 'Nesprávny kód')
+      if (!verifyData.ok) {
+        setError(verifyData.reason === 'expired' ? 'Kód vypršal' : 'Nesprávny kód')
         setIsSubmitting(false)
         return
       }
       
-      // Complete login
       const res = await fetch('/api/admin-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
