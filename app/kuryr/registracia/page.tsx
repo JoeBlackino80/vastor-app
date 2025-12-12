@@ -710,6 +710,13 @@ export default function CourierRegistration() {
             </form>
           )}
 
+          {/* Turnstile on step 5 */}
+          {step === 5 && (
+            <div className="mt-4">
+              <Turnstile onVerify={setTurnstileToken} />
+            </div>
+          )}
+
           {/* Navigation */}
           {step <= 5 && (
             <div className="flex gap-3 mt-6">
@@ -717,7 +724,7 @@ export default function CourierRegistration() {
               {step < 5 ? (
                 <button type="button" onClick={nextStep} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold">Ďalej</button>
               ) : (
-                <button type="button" onClick={() => sendSmsOtp()} disabled={isSubmitting} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Posielam...' : 'Overiť telefón'}</button>
+                <button type="button" onClick={() => sendSmsOtp()} disabled={isSubmitting || !turnstileToken} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Posielam...' : 'Overiť telefón'}</button>
               )}
             </div>
           )}
