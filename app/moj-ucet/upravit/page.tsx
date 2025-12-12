@@ -43,7 +43,7 @@ export default function EditProfile() {
       const res = await fetch('/api/customer-update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: customer.id, ...formData })
+        body: JSON.stringify({ id: customer.id, phone: customer.phone, ...formData })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
