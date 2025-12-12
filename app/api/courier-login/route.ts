@@ -1,32 +1,41 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
-export async function POST(request: Request) {
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export async function POST(req: Request) {
   try {
-    const body = await request.json()
-    const email = body.email?.trim().toLowerCase()
+    const { phone } = await req.json()
 
-    if (!email) {
-      return NextResponse.json({ message: 'missing_email' }, { status: 400 })
+    if (!phone) {
+      return NextResponse.json({ error: 'Telefón je povinný' }, { status: 400 })
     }
 
-    const { data: courier, error } = await (supabase.from('couriers') as any)
+    // Find courier by phone
+    const { data: courier, error } = await supabase
+      .from('couriers')
       .select('*')
-      .eq('email', email)
+      .eq('phone', phone)
       .single()
 
     if (error || !courier) {
-      return NextResponse.json({ message: 'not_found' })
+      return NextResponse.json({ error: 'Účet nenájdený' }, { status: 404 })
     }
 
-    // If OTP verified, return courier directly
-    if (body.otp_verified) {
-      return NextResponse.json({ courier })
+    // Check if approved
+    if (courier.status !== 'approved') {
+      return NextResponse.json({ error: 'Váš účet ešte nebol schválený' }, { status: 403 })
     }
 
-    // Legacy password check (if needed)
-    return NextResponse.json({ message: 'use_otp' })
-  } catch (error) {
-    return NextResponse.json({ message: 'error' }, { status: 500 })
+    // Don't send sensitive data
+    const { pin, ...safeCourier } = courier
+
+    return NextResponse.json({ courier: safeCourier })
+  } catch (err) {
+    console.error('Courier login error:', err)
+    return NextResponse.json({ error: 'Chyba servera' }, { status: 500 })
   }
 }
