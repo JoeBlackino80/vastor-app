@@ -10,7 +10,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Telefón je povinný' }, { status: 400 })
     }
 
-    // Check if phone exists
     const { data: existingPhone } = await (supabase.from('couriers') as any)
       .select('id').eq('phone', phone).single()
     if (existingPhone) {
@@ -29,11 +28,16 @@ export async function POST(request: Request) {
       postal_code: body.postal_code,
       vehicle_type: body.vehicle_type || 'bike',
       drivers_license: body.drivers_license || null,
+      license_group: body.license_group || null,
       vehicle_plate: body.vehicle_plate || null,
       iban: body.iban,
       bank_name: body.bank_name || null,
       terms_accepted: body.terms_accepted || false,
       gdpr_accepted: body.gdpr_accepted || false,
+      id_document_front_url: body.id_document_front_url || null,
+      id_document_back_url: body.id_document_back_url || null,
+      selfie_url: body.selfie_url || null,
+      documents_verified: false,
       status: 'pending',
       rating: 5.00,
       total_deliveries: 0
