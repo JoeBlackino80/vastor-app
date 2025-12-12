@@ -325,6 +325,7 @@ export default function LoginPage() {
                 className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
                 {isSubmitting ? 'Odosielam...' : 'Pokračovať'}
               </button>
+              <Turnstile onVerify={setTurnstileToken} />
               <p className="text-center text-gray-500 text-sm">
                 Nemáte účet? <Link href="/registracia" className="text-black underline">Zaregistrujte sa</Link>
               </p>
