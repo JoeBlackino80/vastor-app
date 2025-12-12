@@ -632,7 +632,7 @@ export default function CourierRegistration() {
           )}
 
           {/* Step 5: Bank & Agreements */}
-          {step === 5 && (
+          {step === 1 && (
             <div className="space-y-4">
               <h2 className="font-bold text-lg">Bankové údaje a súhlasy</h2>
               
@@ -710,8 +710,8 @@ export default function CourierRegistration() {
             </form>
           )}
 
-          {/* Turnstile on step 5 */}
-          {step === 5 && (
+          {/* Turnstile on step 1 */}
+          {step === 1 && (
             <div className="mt-4">
               <Turnstile onVerify={setTurnstileToken} />
             </div>
@@ -724,7 +724,7 @@ export default function CourierRegistration() {
               {step < 5 ? (
                 <button type="button" onClick={nextStep} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold">Ďalej</button>
               ) : (
-                <button type="button" onClick={() => sendSmsOtp()} disabled={isSubmitting || !turnstileToken} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Posielam...' : 'Overiť telefón'}</button>
+                <button type="button" onClick={() => sendSmsOtp()} disabled={isSubmitting} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Posielam...' : 'Overiť telefón'}</button>
               )}
             </div>
           )}
