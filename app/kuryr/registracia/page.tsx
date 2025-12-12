@@ -713,6 +713,7 @@ export default function CourierRegistration() {
           {/* Turnstile on step 1 */}
           {step === 1 && (
             <div className="mt-4">
+              <Turnstile onVerify={setTurnstileToken} />
               
             </div>
           )}
