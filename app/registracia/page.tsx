@@ -601,7 +601,6 @@ export default function RegistrationPage() {
         {step === 1 && (
           <div className="mt-4">
             <Turnstile onVerify={setTurnstileToken} />
-            
           </div>
         )}
         {step <= 3 && (
