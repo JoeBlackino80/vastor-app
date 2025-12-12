@@ -320,7 +320,7 @@ export default function LoginPage() {
                     className="flex-1 px-4 py-4 bg-white border border-gray-200 rounded-xl focus:border-black focus:outline-none" autoFocus />
                 </div>
               </div>
-              <Turnstile onVerify={setTurnstileToken} />
+              
               <button type="button" onClick={() => sendSmsOtp()} disabled={isSubmitting || !phone || !turnstileToken}
                 className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
                 {isSubmitting ? 'Odosielam...' : 'Pokračovať'}
