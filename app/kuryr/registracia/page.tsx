@@ -420,10 +420,12 @@ export default function CourierRegistration() {
             <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
               <UserPlus className="w-6 h-6 text-white" />
             </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
             <div>
               <h1 className="text-xl font-bold">Registrácia kuriéra</h1>
               <p className="text-gray-500 text-sm">Krok {step} z {totalSteps}</p>
             </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
           </div>
           <div className="flex gap-1">
             {Array.from({length: totalSteps}, (_, i) => i + 1).map(s => (
@@ -445,24 +447,29 @@ export default function CourierRegistration() {
                 <input placeholder="Zadajte meno" value={formData.first_name} onChange={e => updateField('first_name', e.target.value)} onBlur={() => handleBlur('first_name')} className={inputClass('first_name')} />
                 {errors.first_name && touched.first_name && <p className="text-red-500 text-sm mt-1">{errors.first_name}</p>}
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Priezvisko *</label>
                 <input placeholder="Zadajte priezvisko" value={formData.last_name} onChange={e => updateField('last_name', e.target.value)} onBlur={() => handleBlur('last_name')} className={inputClass('last_name')} />
                 {errors.last_name && touched.last_name && <p className="text-red-500 text-sm mt-1">{errors.last_name}</p>}
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Dátum narodenia *</label>
                 <input type="date" value={formData.birth_date} onChange={e => updateField('birth_date', e.target.value)} onBlur={() => handleBlur('birth_date')} className={inputClass('birth_date')} />
                 {errors.birth_date && touched.birth_date && <p className="text-red-500 text-sm mt-1">{errors.birth_date}</p>}
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Číslo občianskeho preukazu</label>
                 <input placeholder="Napr. EA123456" value={formData.id_number} onChange={e => updateField('id_number', e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-black focus:outline-none" />
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
             </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
           )}
 
           {/* Step 2: Contact */}
@@ -489,18 +496,23 @@ export default function CourierRegistration() {
                           </button>
                         ))}
                       </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
                     )}
                   </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
                   <input type="tel" placeholder="909 123 456" value={formData.phone} onChange={e => updateField('phone', e.target.value.replace(/\D/g, ''))} onBlur={() => handleBlur('phone')} className={`flex-1 ${inputClass('phone')}`} />
                 </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
                 {errors.phone && touched.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Ulica a číslo domu *</label>
                 <input placeholder="Napr. Hlavná 123" value={formData.street} onChange={e => updateField('street', e.target.value)} onBlur={() => handleBlur('street')} className={inputClass('street')} />
                 {errors.street && touched.street && <p className="text-red-500 text-sm mt-1">{errors.street}</p>}
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -508,12 +520,16 @@ export default function CourierRegistration() {
                   <input placeholder="Napr. Bratislava" value={formData.city} onChange={e => updateField('city', e.target.value)} onBlur={() => handleBlur('city')} className={inputClass('city')} />
                   {errors.city && touched.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
                 </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">PSČ</label>
                   <input placeholder="Napr. 831 01" value={formData.postal_code} onChange={e => updateField('postal_code', e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-black focus:outline-none" />
                 </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
             </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
           )}
 
           {/* Step 3: Vehicle */}
@@ -535,6 +551,7 @@ export default function CourierRegistration() {
                   <span className="text-sm font-medium">Auto</span>
                 </button>
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
               {(formData.vehicle_type === 'motorcycle' || formData.vehicle_type === 'car') && (
                 <>
@@ -543,6 +560,7 @@ export default function CourierRegistration() {
                     <input placeholder="Napr. AB123456" value={formData.license_number} onChange={e => updateField('license_number', e.target.value)} onBlur={() => handleBlur('license_number')} className={inputClass('license_number')} />
                     {errors.license_number && touched.license_number && <p className="text-red-500 text-sm mt-1">{errors.license_number}</p>}
                   </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Skupina vodičského preukazu *</label>
@@ -552,14 +570,17 @@ export default function CourierRegistration() {
                     </select>
                     {errors.license_group && touched.license_group && <p className="text-red-500 text-sm mt-1">{errors.license_group}</p>}
                   </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">ŠPZ vozidla</label>
                     <input placeholder="Napr. BA123AB" value={formData.vehicle_plate} onChange={e => updateField('vehicle_plate', e.target.value.toUpperCase())} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-black focus:outline-none" />
                   </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
                 </>
               )}
             </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
           )}
 
           {/* Step 4: Documents */}
@@ -580,6 +601,7 @@ export default function CourierRegistration() {
                       <X className="w-4 h-4" />
                     </button>
                   </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
                 ) : (
                   <button type="button" onClick={() => fileInputRefs.id_front.current?.click()} className="w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-gray-400 hover:bg-gray-50 transition-colors">
                     <FileText className="w-8 h-8 text-gray-400" />
@@ -587,6 +609,7 @@ export default function CourierRegistration() {
                   </button>
                 )}
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
               {/* ID Back */}
               <div>
@@ -600,6 +623,7 @@ export default function CourierRegistration() {
                       <X className="w-4 h-4" />
                     </button>
                   </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
                 ) : (
                   <button type="button" onClick={() => fileInputRefs.id_back.current?.click()} className="w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-gray-400 hover:bg-gray-50 transition-colors">
                     <FileText className="w-8 h-8 text-gray-400" />
@@ -607,6 +631,7 @@ export default function CourierRegistration() {
                   </button>
                 )}
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
               {/* Selfie */}
               <div>
@@ -621,6 +646,7 @@ export default function CourierRegistration() {
                       <X className="w-4 h-4" />
                     </button>
                   </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
                 ) : (
                   <button type="button" onClick={() => fileInputRefs.selfie.current?.click()} className="w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-gray-400 hover:bg-gray-50 transition-colors">
                     <Camera className="w-8 h-8 text-gray-400" />
@@ -628,7 +654,9 @@ export default function CourierRegistration() {
                   </button>
                 )}
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
             </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
           )}
 
           {/* Step 5: Bank & Agreements */}
@@ -642,11 +670,13 @@ export default function CourierRegistration() {
                 {errors.iban && touched.iban && <p className="text-red-500 text-sm mt-1">{errors.iban}</p>}
                 <p className="text-gray-500 text-xs mt-1">Slovenský IBAN má 24 znakov</p>
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Názov banky</label>
                 <input placeholder="Napr. Slovenská sporiteľňa" value={formData.bank_name} onChange={e => updateField('bank_name', e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-black focus:outline-none" />
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
 
               <div className="pt-4 space-y-3">
                 <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer ${errors.terms_accepted && touched.terms_accepted ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'}`}>
@@ -661,7 +691,9 @@ export default function CourierRegistration() {
                 </label>
                 {errors.gdpr_accepted && touched.gdpr_accepted && <p className="text-red-500 text-sm">{errors.gdpr_accepted}</p>}
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
             </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
           )}
 
           {/* Step 6: SMS Verification */}
@@ -675,6 +707,7 @@ export default function CourierRegistration() {
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input type="text" placeholder="000000" value={smsCode} onChange={e => setSmsCode(e.target.value.replace(/\D/g,'').slice(0,6))} className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none" maxLength={6} autoFocus />
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
               <button type="submit" disabled={isSubmitting || smsCode.length !== 6} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Overujem...' : 'Overiť SMS'}</button>
               {!isDevMode && (
                 <button type="button" onClick={() => sendSmsOtp(true)} disabled={resendTimer > 0 || isSubmitting} className="w-full py-3 text-gray-600 flex items-center justify-center gap-2 disabled:opacity-50">
@@ -696,27 +729,23 @@ export default function CourierRegistration() {
                   <RefreshCw className="w-4 h-4 animate-spin" />
                   Nahrávam dokumenty...
                 </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
               )}
               
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input type="password" inputMode="numeric" placeholder="PIN" value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none" maxLength={4} autoFocus />
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input type="password" inputMode="numeric" placeholder="Potvrďte PIN" value={pinConfirm} onChange={e => setPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))} className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none" maxLength={4} />
               </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
               <button type="submit" disabled={isSubmitting || pin.length !== 4 || pinConfirm.length !== 4} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Registrujem...' : 'Dokončiť registráciu'}</button>
             </form>
           )}
 
-          {/* Turnstile on step 1 */}
-          {step === 1 && (
-            <div className="mt-4">
-              <Turnstile onVerify={setTurnstileToken} />
-              
-            </div>
-          )}
 
           {/* Navigation */}
           {step <= 5 && (
@@ -729,6 +758,7 @@ export default function CourierRegistration() {
               
               )}
             </div>
+            {step === 1 && <div className="mt-4"><Turnstile onVerify={setTurnstileToken} /></div>}
           )}
         </div>
         
