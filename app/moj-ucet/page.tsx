@@ -1,8 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, User, Mail, Phone, MapPin, Package, LogOut, Building2, FileText, Edit2, Heart, Lock } from 'lucide-react'
+import { ArrowLeft, User, Phone, MapPin, Package, LogOut, Building2, FileText, Edit2, Heart, Lock } from 'lucide-react'
+
+const SESSION_TIMEOUT = 5 * 60 * 1000 // 5 minutes
 
 export default function MyAccount() {
   const router = useRouter()
@@ -10,37 +12,81 @@ export default function MyAccount() {
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState({ total: 0, delivered: 0, pending: 0, totalSpent: 0 })
 
+  const checkSession = useCallback(() => {
+    const lastActivity = localStorage.getItem('customer_last_activity')
+    if (!lastActivity) return false
+    return (Date.now() - parseInt(lastActivity)) < SESSION_TIMEOUT
+  }, [])
+
+  const updateActivity = useCallback(() => {
+    localStorage.setItem('customer_last_activity', Date.now().toString())
+  }, [])
+
   useEffect(() => {
     const saved = localStorage.getItem('customer')
     if (saved) {
+      if (!checkSession()) {
+        // Session expired - redirect to login
+        router.push('/prihlasenie')
+        return
+      }
+      
       const c = JSON.parse(saved)
       setCustomer(c)
+      updateActivity()
+      
       // Load stats
-      fetch(`/api/customer-orders?email=${c.email}`)
-        .then(r => r.json())
-        .then(orders => {
-          if (Array.isArray(orders)) {
-            setStats({
-              total: orders.length,
-              delivered: orders.filter((o: any) => o.status === 'delivered').length,
-              pending: orders.filter((o: any) => ['pending','accepted','picked_up'].includes(o.status)).length,
-              totalSpent: orders.reduce((sum: number, o: any) => sum + (o.price || 0), 0)
-            })
-          }
-        })
+      if (c.phone) {
+        fetch(`/api/customer-orders?phone=${c.phone}`)
+          .then(r => r.json())
+          .then(orders => {
+            if (Array.isArray(orders)) {
+              setStats({
+                total: orders.length,
+                delivered: orders.filter((o: any) => o.status === 'delivered').length,
+                pending: orders.filter((o: any) => ['pending','accepted','picked_up'].includes(o.status)).length,
+                totalSpent: orders.reduce((sum: number, o: any) => sum + (o.price || 0), 0)
+              })
+            }
+          })
+          .catch(() => {})
+      }
     }
     setIsLoading(false)
-  }, [])
+  }, [checkSession, updateActivity, router])
+
+  // Update activity on user interaction
+  useEffect(() => {
+    if (!customer) return
+
+    const events = ['click', 'keydown', 'scroll', 'touchstart']
+    const handleActivity = () => updateActivity()
+
+    events.forEach(e => window.addEventListener(e, handleActivity))
+    
+    // Check session every minute
+    const interval = setInterval(() => {
+      if (!checkSession()) {
+        router.push('/prihlasenie')
+      }
+    }, 60000)
+
+    return () => {
+      events.forEach(e => window.removeEventListener(e, handleActivity))
+      clearInterval(interval)
+    }
+  }, [customer, checkSession, updateActivity, router])
 
   const handleLogout = () => {
     localStorage.removeItem('customer')
+    localStorage.removeItem('customer_last_activity')
     router.push('/')
   }
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Načítavam...</p>
+        <div className="animate-spin w-8 h-8 border-4 border-black border-t-transparent rounded-full"></div>
       </div>
     )
   }
@@ -91,7 +137,7 @@ export default function MyAccount() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">{displayName}</h1>
-                <p className="text-gray-500 text-sm">{isCompany ? 'Pre firmu' : 'Pre seba'}</p>
+                <p className="text-gray-500 text-sm">{isCompany ? 'Firemný účet' : 'Osobný účet'}</p>
               </div>
             </div>
             <Link href="/moj-ucet/upravit" className="p-2 hover:bg-gray-100 rounded-full">
@@ -100,10 +146,6 @@ export default function MyAccount() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-gray-400" />
-              <span className="text-gray-700">{customer.email}</span>
-            </div>
             {customer.phone && (
               <div className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-gray-400" />
@@ -141,7 +183,6 @@ export default function MyAccount() {
             </div>
           </div>
         </div>
-
 
         {/* Fakturačné údaje pre firmy */}
         {isCompany && (
@@ -186,10 +227,10 @@ export default function MyAccount() {
             </div>
             <ArrowLeft className="w-5 h-5 text-gray-300 rotate-180" />
           </Link>
-          <Link href="/zmena-hesla" className="flex items-center justify-between p-4 hover:bg-gray-50">
+          <Link href="/moj-ucet/zmena-pin" className="flex items-center justify-between p-4 hover:bg-gray-50">
             <div className="flex items-center gap-3">
               <Lock className="w-5 h-5 text-gray-400" />
-              <span>Zmeniť heslo</span>
+              <span>Zmeniť PIN</span>
             </div>
             <ArrowLeft className="w-5 h-5 text-gray-300 rotate-180" />
           </Link>
