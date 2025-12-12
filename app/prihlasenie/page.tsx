@@ -54,7 +54,7 @@ export default function LoginPage() {
         }
       } else if (data.phone && data.pin && lastActivity) {
         // Valid session - go to dashboard
-        router.push('/dashboard')
+        router.push('/moj-ucet')
       } else if (data.phone && data.pin) {
         setSavedPhone(data.phone)
         setStep('pin')
@@ -89,7 +89,7 @@ export default function LoginPage() {
       const saved = JSON.parse(localStorage.getItem('customer') || '{}')
       if (saved.pin === pin) {
         localStorage.setItem('customer_last_activity', Date.now().toString())
-        router.push('/dashboard')
+        router.push('/moj-ucet')
       } else {
         setError('Nesprávny PIN')
         setPin('')
@@ -207,7 +207,7 @@ export default function LoginPage() {
     localStorage.removeItem('temp_login_phone')
     localStorage.removeItem('temp_login_user')
 
-    router.push('/dashboard')
+    router.push('/moj-ucet')
   }
 
   const handleForgotPin = () => {
