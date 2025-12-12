@@ -475,7 +475,7 @@ export default function RegistrationPage() {
         )}
 
         {/* Step 3: Phone */}
-        {step === 3 && (
+        {step === 1 && (
           <div className="space-y-4">
             <p className="text-sm text-gray-600 mb-2">Telefón použijete na prihlásenie</p>
             <div>
@@ -598,7 +598,7 @@ export default function RegistrationPage() {
         )}
 
         {/* Navigation buttons for steps 1-3 */}
-        {step === 3 && (
+        {step === 1 && (
           <div className="mt-4">
             <Turnstile onVerify={setTurnstileToken} />
           </div>
@@ -609,7 +609,7 @@ export default function RegistrationPage() {
             {step < 3 ? (
               <button type="button" onClick={nextStep} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold">Ďalej</button>
             ) : (
-              <button type="button" onClick={() => sendSmsOtp()} disabled={isSubmitting || !formData.phone || !turnstileToken} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
+              <button type="button" onClick={() => sendSmsOtp()} disabled={isSubmitting || !formData.phone} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
                 {isSubmitting ? 'Posielam...' : 'Overiť telefón'}
               </button>
             )}
