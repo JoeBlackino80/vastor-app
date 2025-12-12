@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { UserPlus, CheckCircle, Bike, Car, AlertCircle, Phone, Lock, RefreshCw, ChevronDown, Upload, Camera, X, FileText } from 'lucide-react'
+import Turnstile from '@/components/Turnstile'
 
 const DEV_PHONES = ['+421909188881']
 const DEV_CODE = '000000'
@@ -68,6 +69,7 @@ export default function CourierRegistration() {
   const [error, setError] = useState('')
   const [resendTimer, setResendTimer] = useState(0)
   const [isDevMode, setIsDevMode] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
 
   const fileInputRefs = {
     id_front: useRef<HTMLInputElement>(null),
