@@ -1,35 +1,36 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
-export async function POST(request: Request) {
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export async function POST(req: Request) {
   try {
-    const { email, phone, otp_verified } = await request.json()
-    
-    const identifierField = phone ? 'phone' : 'email'
-    const identifierValue = phone ? phone.trim() : email?.toLowerCase().trim()
-    
-    if (!identifierValue) {
-      return NextResponse.json({ error: 'Chýba telefón alebo email' }, { status: 400 })
+    const { phone } = await req.json()
+
+    if (!phone) {
+      return NextResponse.json({ error: 'Telefón je povinný' }, { status: 400 })
     }
 
-    const { data: customer, error } = await (supabase.from('customers') as any)
+    // Find customer by phone
+    const { data: customer, error } = await supabase
+      .from('customers')
       .select('*')
-      .eq(identifierField, identifierValue)
+      .eq('phone', phone)
       .single()
 
     if (error || !customer) {
-      return NextResponse.json({ error: 'Účet neexistuje' }, { status: 401 })
+      return NextResponse.json({ error: 'Účet nenájdený' }, { status: 404 })
     }
 
-    if (!otp_verified) {
-      return NextResponse.json({ error: 'OTP overenie vyžadované' }, { status: 401 })
-    }
+    // Don't send sensitive data
+    const { pin, ...safeUser } = customer
 
-    const { password_hash: _, pin_hash: __, ...safeCustomer } = customer
-
-    return NextResponse.json({ success: true, customer: safeCustomer })
-  } catch (error) {
-    console.error('Login error:', error)
-    return NextResponse.json({ error: 'Prihlásenie zlyhalo' }, { status: 500 })
+    return NextResponse.json({ user: safeUser })
+  } catch (err) {
+    console.error('Customer login error:', err)
+    return NextResponse.json({ error: 'Chyba servera' }, { status: 500 })
   }
 }
