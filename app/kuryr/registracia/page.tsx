@@ -713,7 +713,7 @@ export default function CourierRegistration() {
           {/* Turnstile on step 1 */}
           {step === 1 && (
             <div className="mt-4">
-              <Turnstile onVerify={setTurnstileToken} />
+              
             </div>
           )}
 
@@ -725,6 +725,7 @@ export default function CourierRegistration() {
                 <button type="button" onClick={nextStep} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold">Ďalej</button>
               ) : (
                 <button type="button" onClick={() => sendSmsOtp()} disabled={isSubmitting} className="flex-1 py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">{isSubmitting ? 'Posielam...' : 'Overiť telefón'}</button>
+              <Turnstile onVerify={setTurnstileToken} />
               )}
             </div>
           )}

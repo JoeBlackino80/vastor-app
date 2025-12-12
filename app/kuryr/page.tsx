@@ -323,7 +323,7 @@ export default function CourierLoginPage() {
                     className="flex-1 px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-green-500 focus:outline-none" autoFocus />
                 </div>
               </div>
-              <Turnstile onVerify={setTurnstileToken} />
+              
               <button type="button" onClick={() => sendSmsOtp()} disabled={isSubmitting || !phone || !turnstileToken}
                 className="w-full py-4 bg-green-500 text-white rounded-xl font-semibold disabled:opacity-50">
                 {isSubmitting ? 'Odosielam...' : 'Pokračovať'}
