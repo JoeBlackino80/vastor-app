@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Building2, User, ArrowLeft, CheckCircle, AlertCircle, Phone, RefreshCw, Lock, ChevronDown } from 'lucide-react'
+import Turnstile from '@/components/Turnstile'
 
 const DEV_PHONES = ['+421909188881']
 const DEV_CODE = '000000'
@@ -33,6 +34,7 @@ export default function RegistrationPage() {
   const [pinConfirm, setPinConfirm] = useState('')
   const [resendTimer, setResendTimer] = useState(0)
   const [isDevMode, setIsDevMode] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
   
   const [formData, setFormData] = useState({
     firstName: '',
