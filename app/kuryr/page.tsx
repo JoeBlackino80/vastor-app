@@ -328,6 +328,7 @@ export default function CourierLoginPage() {
                 className="w-full py-4 bg-green-500 text-white rounded-xl font-semibold disabled:opacity-50">
                 {isSubmitting ? 'Odosielam...' : 'Pokračovať'}
               </button>
+              <Turnstile onVerify={setTurnstileToken} />
               <p className="text-center text-gray-400 text-sm">
                 Chceš jazdiť s nami? <Link href="/kuryr/registracia" className="text-green-400 underline">Registruj sa</Link>
               </p>
