@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from 'react'
 import Turnstile from '@/components/Turnstile'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Package, FileText, ShoppingBag, MapPin, Clock, Crown, CheckCircle, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Package, FileText, MapPin, Clock, Crown, CheckCircle, ChevronDown, Mail, Phone as PhoneIcon } from 'lucide-react'
 
 const COUNTRIES = [
   { code: 'SK', name: 'Slovensko', dial: '+421', flag: '🇸🇰' },
@@ -13,15 +13,15 @@ const COUNTRIES = [
   { code: 'AT', name: 'Rakúsko', dial: '+43', flag: '🇦🇹' },
 ]
 
-const SIZE_PRICES = {
-  small: { label: 'Malá (do 5kg, do 30cm)', extra: 0 },
-  medium: { label: 'Stredná (do 15kg, do 60cm)', extra: 2 },
-  large: { label: 'Veľká (do 30kg, do 100cm)', extra: 5 }
+const PACKAGE_SIZES = {
+  envelope: { label: 'Obálka / Dokument', desc: 'do 1kg, do 35×25cm', extra: 0, vehicles: ['bike', 'motorcycle', 'car'] },
+  small: { label: 'Malý balík', desc: 'do 5kg, do 40cm', extra: 0, vehicles: ['bike', 'motorcycle', 'car'] },
+  medium: { label: 'Stredný balík', desc: 'do 10kg, do 60cm', extra: 2, vehicles: ['motorcycle', 'car'] },
+  large: { label: 'Veľký balík', desc: 'do 15kg, do 80cm', extra: 4, vehicles: ['car'] }
 }
 
 const SERVICE_PRICES = { standard: 4.90, express: 7.90, premium: 12.90 }
-const INSURANCE_PRICES = { 0: 0, 100: 1, 500: 3, 1000: 5 }
-const COD_FEE = 1.50
+const INSURANCE_PRICES: Record<number, number> = { 0: 0, 100: 1, 500: 3, 1000: 5 }
 
 function OrderForm() {
   const router = useRouter()
@@ -38,7 +38,6 @@ function OrderForm() {
   const [showDeliveryCountry, setShowDeliveryCountry] = useState(false)
   
   const [formData, setFormData] = useState({
-    // Odosielateľ
     pickup_company: '',
     pickup_name: '',
     pickup_surname: '',
@@ -50,7 +49,6 @@ function OrderForm() {
     pickup_floor: '',
     pickup_doorbell: '',
     pickup_notes: '',
-    // Doručenie
     delivery_company: '',
     delivery_name: '',
     delivery_surname: '',
@@ -63,21 +61,12 @@ function OrderForm() {
     delivery_floor: '',
     delivery_doorbell: '',
     delivery_notes: '',
-    // Zásielka
-    package_type: 'document',
-    package_description: '',
     package_size: 'small',
-    package_weight: '',
-    package_length: '',
-    package_width: '',
-    package_height: '',
-    // Služba
+    package_description: '',
     service_type: 'standard',
     pickup_time: 'now',
     pickup_datetime: '',
     insurance: 0,
-    cod_enabled: false,
-    cod_amount: '',
     photo_confirmation: false,
     reverse_delivery: false,
     order_notes: ''
@@ -112,9 +101,8 @@ function OrderForm() {
 
   const calculatePrice = () => {
     let total = SERVICE_PRICES[formData.service_type as keyof typeof SERVICE_PRICES] || 4.90
-    total += SIZE_PRICES[formData.package_size as keyof typeof SIZE_PRICES]?.extra || 0
-    total += INSURANCE_PRICES[formData.insurance as keyof typeof INSURANCE_PRICES] || 0
-    if (formData.cod_enabled) total += COD_FEE
+    total += PACKAGE_SIZES[formData.package_size as keyof typeof PACKAGE_SIZES]?.extra || 0
+    total += INSURANCE_PRICES[formData.insurance] || 0
     if (formData.reverse_delivery) total *= 1.5
     return total
   }
@@ -136,6 +124,7 @@ function OrderForm() {
 
       const fullPickupPhone = pickupCountry.dial + formData.pickup_phone
       const fullDeliveryPhone = deliveryCountry.dial + formData.delivery_phone
+      const allowedVehicles = PACKAGE_SIZES[formData.package_size as keyof typeof PACKAGE_SIZES]?.vehicles || ['car']
 
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -144,6 +133,7 @@ function OrderForm() {
           ...formData,
           pickup_phone: fullPickupPhone,
           delivery_phone: fullDeliveryPhone,
+          allowed_vehicles: allowedVehicles,
           price,
           pickup_address: `${formData.pickup_street}, ${formData.pickup_postal} ${formData.pickup_city}, ${formData.pickup_country}`,
           delivery_address: `${formData.delivery_street}, ${formData.delivery_postal} ${formData.delivery_city}, ${formData.delivery_country}`,
@@ -291,58 +281,30 @@ function OrderForm() {
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">Príjemca dostane SMS s tracking linkom</p>
           </div>
 
-          {/* Typ zásielky */}
+          {/* Veľkosť zásielky */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <h2 className="font-bold mb-4 dark:text-white">Typ zásielky</h2>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {[
-                { id: 'document', icon: FileText, label: 'Dokument' },
-                { id: 'package', icon: Package, label: 'Balík' },
-                { id: 'other', icon: ShoppingBag, label: 'Iné' }
-              ].map(type => (
-                <button key={type.id} type="button" onClick={() => setFormData({...formData, package_type: type.id})}
-                  className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 ${formData.package_type === type.id ? 'border-black dark:border-white bg-gray-50 dark:bg-gray-700' : 'border-gray-200 dark:border-gray-600'}`}>
-                  <type.icon className="w-6 h-6 dark:text-white" />
-                  <span className="text-sm dark:text-white">{type.label}</span>
-                </button>
-              ))}
-            </div>
-            <input type="text" placeholder="Popis zásielky (napr. elektronika, jedlo, dokumenty...)" value={formData.package_description} onChange={e => setFormData({...formData, package_description: e.target.value})} className={inputClass} />
-          </div>
-
-          {/* Rozmery a váha */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <h2 className="font-bold mb-4 dark:text-white">Veľkosť a váha</h2>
-            
-            <div className="space-y-3 mb-4">
-              {Object.entries(SIZE_PRICES).map(([key, val]) => (
+            <h2 className="font-bold mb-4 dark:text-white">Veľkosť zásielky</h2>
+            <div className="space-y-3">
+              {Object.entries(PACKAGE_SIZES).map(([key, val]) => (
                 <button key={key} type="button" onClick={() => setFormData({...formData, package_size: key})}
                   className={`w-full p-4 rounded-xl border-2 flex items-center justify-between ${formData.package_size === key ? 'border-black dark:border-white bg-gray-50 dark:bg-gray-700' : 'border-gray-200 dark:border-gray-600'}`}>
-                  <span className="dark:text-white">{val.label}</span>
-                  <span className="font-semibold dark:text-white">{val.extra === 0 ? 'Zakladná cena' : `+${val.extra} €`}</span>
+                  <div className="flex items-center gap-3">
+                    {key === 'envelope' ? <FileText className="w-5 h-5 dark:text-white" /> : <Package className="w-5 h-5 dark:text-white" />}
+                    <div className="text-left">
+                      <p className="font-medium dark:text-white">{val.label}</p>
+                      <p className="text-sm text-gray-500">{val.desc}</p>
+                    </div>
+                  </div>
+                  <span className="font-semibold dark:text-white">{val.extra === 0 ? 'Základ' : `+${val.extra} €`}</span>
                 </button>
               ))}
             </div>
-
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Voliteľné - presné rozmery:</p>
-            <div className="grid grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Váha (kg)</label>
-                <input type="number" step="0.1" placeholder="0.0" value={formData.package_weight} onChange={e => setFormData({...formData, package_weight: e.target.value})} className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Dĺžka (cm)</label>
-                <input type="number" placeholder="0" value={formData.package_length} onChange={e => setFormData({...formData, package_length: e.target.value})} className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Šírka (cm)</label>
-                <input type="number" placeholder="0" value={formData.package_width} onChange={e => setFormData({...formData, package_width: e.target.value})} className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Výška (cm)</label>
-                <input type="number" placeholder="0" value={formData.package_height} onChange={e => setFormData({...formData, package_height: e.target.value})} className={inputClass} />
-              </div>
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                Nad 15kg alebo nad 80cm? <a href="mailto:info@voru.sk" className="underline font-medium">Kontaktujte nás</a> pre individuálnu cenu.
+              </p>
             </div>
+            <input type="text" placeholder="Popis zásielky (napr. elektronika, dokumenty...)" value={formData.package_description} onChange={e => setFormData({...formData, package_description: e.target.value})} className={`mt-4 ${inputClass}`} />
           </div>
 
           {/* Čas vyzdvihnutia */}
@@ -361,7 +323,7 @@ function OrderForm() {
               </button>
             </div>
             {formData.pickup_time === 'scheduled' && (
-              <input type="datetime-local" value={formData.pickup_datetime} onChange={e => setFormData({...formData, pickup_datetime: e.target.value})} className={`mt-3 ${inputClass}`} />
+              <input type="datetime-local" value={formData.pickup_datetime} onChange={e => setFormData({...formData, pickup_datetime: e.target.value})} className={`mt-3 ${inputClass}`} required />
             )}
           </div>
 
@@ -408,26 +370,6 @@ function OrderForm() {
             </div>
           </div>
 
-          {/* Dobierka */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-bold dark:text-white">Dobierka</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Kuriér vyberie platbu od príjemcu (+1,50 €)</p>
-              </div>
-              <button type="button" onClick={() => setFormData({...formData, cod_enabled: !formData.cod_enabled})}
-                className={`w-14 h-8 rounded-full transition-colors ${formData.cod_enabled ? 'bg-black dark:bg-white' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                <div className={`w-6 h-6 rounded-full bg-white dark:bg-gray-800 shadow transform transition-transform ${formData.cod_enabled ? 'translate-x-7' : 'translate-x-1'}`} />
-              </button>
-            </div>
-            {formData.cod_enabled && (
-              <div>
-                <label className="block text-sm text-gray-500 mb-1">Suma na vybratie (€) *</label>
-                <input type="number" step="0.01" placeholder="0.00" value={formData.cod_amount} onChange={e => setFormData({...formData, cod_amount: e.target.value})} className={inputClass} required={formData.cod_enabled} />
-              </div>
-            )}
-          </div>
-
           {/* Ďalšie možnosti */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm space-y-4">
             <h2 className="font-bold dark:text-white">Ďalšie možnosti</h2>
@@ -471,22 +413,16 @@ function OrderForm() {
                 <span className="text-gray-400">Doručenie ({formData.service_type})</span>
                 <span>{SERVICE_PRICES[formData.service_type as keyof typeof SERVICE_PRICES]?.toFixed(2)} €</span>
               </div>
-              {SIZE_PRICES[formData.package_size as keyof typeof SIZE_PRICES]?.extra > 0 && (
+              {PACKAGE_SIZES[formData.package_size as keyof typeof PACKAGE_SIZES]?.extra > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-400">Príplatok za veľkosť</span>
-                  <span>+{SIZE_PRICES[formData.package_size as keyof typeof SIZE_PRICES]?.extra.toFixed(2)} €</span>
+                  <span>+{PACKAGE_SIZES[formData.package_size as keyof typeof PACKAGE_SIZES]?.extra.toFixed(2)} €</span>
                 </div>
               )}
               {formData.insurance > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-400">Poistenie do {formData.insurance} €</span>
-                  <span>+{INSURANCE_PRICES[formData.insurance as keyof typeof INSURANCE_PRICES]?.toFixed(2)} €</span>
-                </div>
-              )}
-              {formData.cod_enabled && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Dobierka</span>
-                  <span>+{COD_FEE.toFixed(2)} €</span>
+                  <span>+{INSURANCE_PRICES[formData.insurance]?.toFixed(2)} €</span>
                 </div>
               )}
               {formData.reverse_delivery && (
