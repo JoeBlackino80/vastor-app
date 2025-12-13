@@ -37,7 +37,6 @@ const COUNTRIES = [
   { code: 'MT', name: 'Malta', dial: '+356', flag: '🇲🇹' },
   { code: 'CY', name: 'Cyprus', dial: '+357', flag: '🇨🇾' },
 ]
-]
 
 export default function RegistrationPage() {
   const router = useRouter()
