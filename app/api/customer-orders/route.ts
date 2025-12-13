@@ -15,21 +15,26 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Missing phone or email' }, { status: 400 })
   }
 
-  let query = supabase.from('orders').select('*').order('created_at', { ascending: false })
+  try {
+    let query = supabase.from('orders').select('*').order('created_at', { ascending: false })
 
-  if (phone) {
-    const phoneClean = phone.replace('+', '')
-    query = query.or('customer_phone.eq.' + phone + ',customer_phone.eq.' + phoneClean)
-  } else if (email) {
-    query = query.eq('customer_email', email)
-  }
+    if (phone) {
+      const phoneDigits = phone.replace(/\D/g, '')
+      query = query.ilike('customer_phone', '%' + phoneDigits.slice(-9) + '%')
+    } else if (email) {
+      query = query.eq('customer_email', email)
+    }
 
-  const { data: orders, error } = await query
+    const { data: orders, error } = await query
 
-  if (error) {
-    console.error('Customer orders error:', error)
+    if (error) {
+      console.error('Customer orders error:', error)
+      return NextResponse.json([])
+    }
+
+    return NextResponse.json(orders || [])
+  } catch (err) {
+    console.error('Customer orders exception:', err)
     return NextResponse.json([])
   }
-
-  return NextResponse.json(orders || [])
 }
