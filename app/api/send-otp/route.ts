@@ -22,9 +22,9 @@ export async function POST(request: Request) {
 
     const accountSid = process.env.TWILIO_ACCOUNT_SID
     const authToken = process.env.TWILIO_AUTH_TOKEN
-    const senderId = process.env.TWILIO_SENDER_ID || 'VORU'
+    const senderId = process.env.TWILIO_SENDER_ID
 
-    if (!accountSid || !authToken) {
+    if (!accountSid || !authToken || !senderId) {
       console.error('Twilio credentials missing')
       return NextResponse.json({ error: 'SMS služba nie je nakonfigurovaná' }, { status: 500 })
     }
@@ -34,13 +34,13 @@ export async function POST(request: Request) {
     const response = await fetch(twilioUrl, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
+        'Authorization': 'Basic ' + Buffer.from(accountSid + ':' + authToken).toString('base64'),
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
         To: phone,
         From: senderId,
-        Body: `Vas overovaci kod pre VORU je: ${code}`
+        Body: `VORU: Vas prihlasovaci kod je ${code}`
       })
     })
 
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nepodarilo sa odoslat SMS' }, { status: 500 })
     }
 
-    console.log(`OTP sent to ${phone}`)
+    console.log(`OTP sent to ${phone}: ${code}`)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Send OTP error:', error)
