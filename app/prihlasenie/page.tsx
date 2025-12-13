@@ -290,7 +290,7 @@ export default function LoginPage() {
                 <button type="button" onClick={useDifferentPhone} className="text-gray-600 hover:text-black">Iný účet</button>
               </div>
               <div className="text-center">
-                <button type="button" onClick={() => { localStorage.removeItem('customer'); localStorage.removeItem('customer_last_activity'); router.push('/'); }} className="text-red-500 hover:text-red-700 text-sm">Odhlásiť sa úplne</button>
+                <button type="button" onClick={() => { localStorage.removeItem('customer'); localStorage.removeItem('customer_last_activity'); router.push('/'); }} className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 mt-4">Odhlásiť sa úplne</button>
               </div>
             </form>
           )}
