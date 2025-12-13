@@ -34,7 +34,6 @@ const COUNTRIES = [
   { code: 'MT', name: 'Malta', dial: '+356', flag: '🇲🇹' },
   { code: 'CY', name: 'Cyprus', dial: '+357', flag: '🇨🇾' },
 ]
-]
 
 const PACKAGE_SIZES = {
   envelope: { label: 'Obálka / Dokument', desc: 'do 1kg, do 35×25cm', extra: 0, vehicles: ['bike', 'motorcycle', 'car'] },
