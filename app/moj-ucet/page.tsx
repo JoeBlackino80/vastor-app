@@ -2,9 +2,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, User, Phone, MapPin, Package, LogOut, Building2, FileText, Edit2, Heart, Lock } from 'lucide-react'
+import { ArrowLeft, User, Phone, MapPin, Package, LogOut, Building2, FileText, Edit2, Heart } from 'lucide-react'
 
-const SESSION_TIMEOUT = 5 * 60 * 1000
+const SESSION_TIMEOUT = 15 * 60 * 1000
 
 export default function MyAccount() {
   const router = useRouter()
@@ -26,6 +26,8 @@ export default function MyAccount() {
     const saved = localStorage.getItem('customer')
     if (saved) {
       if (!checkSession()) {
+        localStorage.removeItem('customer')
+        localStorage.removeItem('customer_last_activity')
         router.push('/prihlasenie')
         return
       }
@@ -58,6 +60,8 @@ export default function MyAccount() {
     events.forEach(e => window.addEventListener(e, handleActivity))
     const interval = setInterval(() => {
       if (!checkSession()) {
+        localStorage.removeItem('customer')
+        localStorage.removeItem('customer_last_activity')
         router.push('/prihlasenie')
       }
     }, 60000)
@@ -68,11 +72,6 @@ export default function MyAccount() {
   }, [customer, checkSession, updateActivity, router])
 
   const handleLogout = () => {
-    localStorage.removeItem('customer_last_activity')
-    router.push('/prihlasenie')
-  }
-
-  const handleFullLogout = () => {
     localStorage.removeItem('customer')
     localStorage.removeItem('customer_last_activity')
     router.push('/')
@@ -165,7 +164,7 @@ export default function MyAccount() {
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 text-center">
               <p className="text-3xl font-bold text-blue-600">{stats.totalSpent.toFixed(0)}€</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Celkom €</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Celkom</p>
             </div>
           </div>
         </div>
@@ -202,17 +201,10 @@ export default function MyAccount() {
             </div>
             <ArrowLeft className="w-5 h-5 text-gray-300 rotate-180" />
           </Link>
-          <Link href="/moje-objednavky" className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700">
+          <Link href="/moje-objednavky" className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
             <div className="flex items-center gap-3">
               <Package className="w-5 h-5 text-gray-400" />
               <span className="dark:text-white">História objednávok</span>
-            </div>
-            <ArrowLeft className="w-5 h-5 text-gray-300 rotate-180" />
-          </Link>
-          <Link href="/moj-ucet/zmena-pin" className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
-            <div className="flex items-center gap-3">
-              <Lock className="w-5 h-5 text-gray-400" />
-              <span className="dark:text-white">Zmeniť PIN</span>
             </div>
             <ArrowLeft className="w-5 h-5 text-gray-300 rotate-180" />
           </Link>
@@ -223,9 +215,6 @@ export default function MyAccount() {
           </Link>
           <button onClick={handleLogout} className="flex items-center justify-center gap-2 w-full py-4 text-red-500 font-semibold hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl">
             <LogOut className="w-5 h-5" /> Odhlásiť sa
-          </button>
-          <button onClick={handleFullLogout} className="flex items-center justify-center gap-2 w-full py-3 text-gray-500 dark:text-gray-400 text-sm">
-            Odhlásiť z tohto zariadenia úplne
           </button>
         </div>
       </div>
