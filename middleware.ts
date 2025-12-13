@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(new URL('/kuryr/registracia', request.url))
     }
     if (pathname === '/prihlasenie') {
-      return NextResponse.rewrite(new URL('/kuryr', request.url))
+      return NextResponse.rewrite(new URL('/kuryr/prihlasenie', request.url))
     }
     if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
       return NextResponse.rewrite(new URL('/kuryr' + pathname, request.url))
@@ -23,7 +23,6 @@ export function middleware(request: NextRequest) {
 
   // Hlavná doména - presmeruj /kuryr/* na subdoménu
   if (!host.startsWith('kurier.') && pathname.startsWith('/kuryr')) {
-    const protocol = request.headers.get('x-forwarded-proto') || 'https'
     const newPath = pathname.replace('/kuryr', '') || '/'
     return NextResponse.redirect(new URL(newPath, 'https://kurier.voru.sk'))
   }
