@@ -1,12 +1,3 @@
-open -a TextEdit ~/Downloads/vastor-app-2/app/moj-ucet/page.tsx
-```
-
-Potom **vymaž všetko** (Cmd+A, potom Delete).
-
-A teraz vlož túto **ČASŤ 1** (skopíruj všetko medzi čiarami):
-
----
-```
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -85,7 +76,9 @@ export default function MyAccount() {
     localStorage.removeItem('customer')
     localStorage.removeItem('customer_last_activity')
     router.push('/')
-  }if (isLoading) {
+  }
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-black dark:border-white border-t-transparent rounded-full"></div>
@@ -125,7 +118,6 @@ export default function MyAccount() {
         <button onClick={() => router.back()} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full mb-4">
           <ArrowLeft className="w-6 h-6 dark:text-white" />
         </button>
-
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-4">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -155,7 +147,8 @@ export default function MyAccount() {
               </div>
             )}
           </div>
-        </div><div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-4">
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-4">
           <h2 className="font-bold mb-4 dark:text-white">Prehľad</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
@@ -176,7 +169,6 @@ export default function MyAccount() {
             </div>
           </div>
         </div>
-
         {isCompany && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-4">
             <h2 className="font-bold mb-4 flex items-center gap-2 dark:text-white">
@@ -201,7 +193,8 @@ export default function MyAccount() {
               )}
             </div>
           </div>
-        )}<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm mb-4 overflow-hidden">
+        )}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm mb-4 overflow-hidden">
           <Link href="/moj-ucet/adresy" className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <Heart className="w-5 h-5 text-gray-400" />
@@ -224,7 +217,6 @@ export default function MyAccount() {
             <ArrowLeft className="w-5 h-5 text-gray-300 rotate-180" />
           </Link>
         </div>
-
         <div className="space-y-3">
           <Link href="/objednavka" className="flex items-center justify-center gap-2 w-full py-4 bg-black text-white rounded-xl font-semibold">
             <Package className="w-5 h-5" /> Nová objednávka
