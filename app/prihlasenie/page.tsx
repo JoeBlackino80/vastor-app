@@ -317,8 +317,8 @@ export default function LoginPage() {
 
   // Odhlásenie
   const handleLogout = () => {
-    localStorage.removeItem('customer')
-    localStorage.removeItem('customer_last_activity')
+    // Nechaj customer v localStorage, vymaž len aktivitu
+    localStorage.removeItem('customer_last_activity') // Po odhlásení stačí PIN
     router.push('/')
   }
 
