@@ -98,6 +98,7 @@ export default function CourierDashboard() {
                 <p className="text-xs text-gray-400">{courier.vehicle === 'bike' ? '🚲 Bicykel' : courier.vehicle === 'motorcycle' ? '🛵 Skúter' : '🚗 Auto'}</p>
               </div>
             </div>
+            <Link href="/kuryr/dashboard/profil" className="p-2 text-gray-400 hover:text-white"><User className="w-5 h-5" /></Link>
             <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-white">
               <LogOut className="w-5 h-5" />
             </button>
