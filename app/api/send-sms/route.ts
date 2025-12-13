@@ -9,8 +9,11 @@ const supabase = createClient(
 export async function POST(request: Request) {
   try {
     const { phone, message, order_id, type } = await request.json()
+    
+    console.log('SMS API called:', { phone, message: message?.substring(0, 50), order_id, type })
 
     if (!phone || !message) {
+      console.log('SMS API error: Phone or message missing')
       return NextResponse.json({ error: 'Phone and message required' }, { status: 400 })
     }
 
@@ -18,8 +21,16 @@ export async function POST(request: Request) {
     const authToken = process.env.TWILIO_AUTH_TOKEN
     const senderId = process.env.TWILIO_SENDER_ID || 'VORU'
 
+    console.log('Twilio config:', { 
+      hasAccountSid: !!accountSid, 
+      hasAuthToken: !!authToken, 
+      senderId 
+    })
+
     if (accountSid && authToken) {
       const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`
+      
+      console.log('Sending SMS to:', phone, 'from:', senderId)
       
       const response = await fetch(twilioUrl, {
         method: 'POST',
@@ -34,14 +45,15 @@ export async function POST(request: Request) {
         })
       })
 
+      const responseData = await response.json()
+      
       if (!response.ok) {
-        const error = await response.json()
-        console.error('Twilio error:', error)
+        console.error('Twilio error:', responseData)
       } else {
-        console.log('SMS sent to ' + phone)
+        console.log('SMS sent successfully:', responseData.sid)
       }
     } else {
-      console.log('SMS (no Twilio): ' + phone + ' - ' + message)
+      console.log('Twilio not configured, skipping SMS')
     }
 
     if (order_id && type) {
@@ -59,7 +71,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('SMS error:', error)
+    console.error('SMS API error:', error)
     return NextResponse.json({ error: 'SMS failed' }, { status: 500 })
   }
 }
