@@ -7,19 +7,15 @@ export function middleware(request: NextRequest) {
 
   // Kuriérska subdoména
   if (host.startsWith('kurier.')) {
-    // Presmeruj root na kuriérsku hlavnú stránku
     if (pathname === '/') {
       return NextResponse.rewrite(new URL('/kuryr', request.url))
     }
-    // /registracia na kurier.voru.sk → /kuryr/registracia
     if (pathname === '/registracia') {
       return NextResponse.rewrite(new URL('/kuryr/registracia', request.url))
     }
-    // /prihlasenie na kurier.voru.sk → /kuryr (má prihlásenie)
     if (pathname === '/prihlasenie') {
       return NextResponse.rewrite(new URL('/kuryr', request.url))
     }
-    // /dashboard na kurier.voru.sk → /kuryr/dashboard
     if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
       return NextResponse.rewrite(new URL('/kuryr' + pathname, request.url))
     }
@@ -27,9 +23,9 @@ export function middleware(request: NextRequest) {
 
   // Hlavná doména - presmeruj /kuryr/* na subdoménu
   if (!host.startsWith('kurier.') && pathname.startsWith('/kuryr')) {
-    const kurierHost = host.replace('voru.sk', 'kurier.voru.sk').replace('vastor-app.vercel.app', 'kurier.voru.sk')
+    const protocol = request.headers.get('x-forwarded-proto') || 'https'
     const newPath = pathname.replace('/kuryr', '') || '/'
-    return NextResponse.redirect(new URL(newPath, `https://${kurierHost}`))
+    return NextResponse.redirect(new URL(newPath, 'https://kurier.voru.sk'))
   }
 
   return NextResponse.next()
