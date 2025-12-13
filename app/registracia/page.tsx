@@ -292,7 +292,10 @@ export default function RegistrationPage() {
       
       if (!pinRes.ok) throw new Error('Chyba pri nastavení PIN')
       
-      localStorage.setItem('customer_phone', fullPhone)
+      // Automatické prihlásenie po registrácii
+      localStorage.setItem('customer', JSON.stringify({ phone: fullPhone, pin: pin, ...data.customer }))
+      localStorage.setItem('customer_last_activity', Date.now().toString())
+      router.push('/moj-ucet')
       
       setSuccess(true)
     } catch (err: any) {
