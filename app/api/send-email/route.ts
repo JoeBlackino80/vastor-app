@@ -8,7 +8,7 @@ type EmailType = "order_confirmed" | "pickup" | "delivered" | "recipient_notific
 export async function POST(request: Request) {
   try {
     const { to, orderId, pickupAddress, deliveryAddress, type = "order_confirmed", courierName, recipientName, senderName, deliveryPin } = await request.json()
-    const trackingUrl = `https://vastor-app.vercel.app/sledovat/${orderId}`
+    const trackingUrl = `https://voru.sk/sledovat/${orderId}`
     let subject = ""
     let content = ""
 
