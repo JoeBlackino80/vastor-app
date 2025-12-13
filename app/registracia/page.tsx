@@ -9,7 +9,6 @@ const DEV_PHONES = ['+421909188881']
 const DEV_CODE = '000000'
 
 const COUNTRIES = [
-const COUNTRIES = [
   { code: 'SK', name: 'Slovensko', dial: '+421', flag: '🇸🇰' },
   { code: 'CZ', name: 'Česko', dial: '+420', flag: '🇨🇿' },
   { code: 'AT', name: 'Rakúsko', dial: '+43', flag: '🇦🇹' },
