@@ -300,7 +300,7 @@ export default function LoginPage() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('customer')
+    // localStorage.removeItem('customer') // Nechaj customer pre PIN prihlásenie
     localStorage.removeItem('customer_last_activity')
     router.push('/')
   }
