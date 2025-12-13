@@ -7,7 +7,7 @@ import Turnstile from '@/components/Turnstile'
 
 const DEV_PHONE = '+421909188881'
 const DEV_CODE = '000000'
-const SESSION_TIMEOUT = 5 * 60 * 1000 // 5 minutes
+const SESSION_TIMEOUT = 5 * 60 * 1000
 
 const COUNTRIES = [
   { code: 'SK', name: 'Slovensko', dial: '+421', flag: '🇸🇰' },
@@ -39,20 +39,11 @@ const COUNTRIES = [
   { code: 'CY', name: 'Cyprus', dial: '+357', flag: '🇨🇾' },
 ]
 
-// Kroky: 
-// 'init' - kontrola localStorage
-// 'pin-only' - má uložený účet, zadáva len PIN
-// 'phone' - zadáva telefón (nové zariadenie)
-// 'sms' - zadáva SMS kód
-// 'pin-verify' - overuje existujúci PIN (po SMS z nového zariadenia)
-// 'pin-reset' - vytvára nový PIN (zabudnutý PIN)
-// 'pin-reset-confirm' - potvrdzuje nový PIN
 type Step = 'init' | 'pin-only' | 'phone' | 'sms' | 'pin-verify' | 'pin-reset' | 'pin-reset-confirm'
 
 export default function LoginPage() {
   const router = useRouter()
   
-  // State
   const [step, setStep] = useState<Step>('init')
   const [phone, setPhone] = useState('')
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0])
@@ -66,13 +57,11 @@ export default function LoginPage() {
   const [turnstileToken, setTurnstileToken] = useState('')
   const [resendTimer, setResendTimer] = useState(0)
   
-  // Uložené dáta
   const [savedCustomer, setSavedCustomer] = useState<any>(null)
-  const [tempCustomer, setTempCustomer] = useState<any>(null) // Pre nové zariadenie po SMS
+  const [loginPhone, setLoginPhone] = useState<string>('')
   const [isDevMode, setIsDevMode] = useState(false)
   const [isForgotPin, setIsForgotPin] = useState(false)
 
-  // Init - skontroluj localStorage
   useEffect(() => {
     const saved = localStorage.getItem('customer')
     if (saved) {
@@ -80,25 +69,22 @@ export default function LoginPage() {
       const lastActivity = localStorage.getItem('customer_last_activity')
       const now = Date.now()
       
-      // Ak je aktívna session (menej ako 5 min), presmeruj na účet
       if (lastActivity && (now - parseInt(lastActivity)) < SESSION_TIMEOUT) {
         router.push('/moj-ucet')
         return
       }
       
-      // Session vypršala alebo nie je - potrebuje PIN
       if (customer.phone) {
         setSavedCustomer(customer)
+        setLoginPhone(customer.phone)
         setStep('pin-only')
         return
       }
     }
     
-    // Žiadny uložený účet - potrebuje telefón
     setStep('phone')
   }, [router])
 
-  // Resend timer
   useEffect(() => {
     if (resendTimer > 0) {
       const t = setTimeout(() => setResendTimer(r => r - 1), 1000)
@@ -106,29 +92,43 @@ export default function LoginPage() {
     }
   }, [resendTimer])
 
-  // Helper - maskuj telefón
   const maskPhone = (p: string) => p ? p.slice(0, -4).replace(/./g, '*') + p.slice(-4) : ''
-  
-  // Helper - plné telefónne číslo
   const getFullPhone = () => selectedCountry.dial + phone
 
-  // ============ AKCIE ============
-
-  // Prihlásenie len PINom (uložený účet)
-  const handlePinOnly = async (e: React.FormEvent) => {
+  // Prihlásenie PINom - overuje cez API
+  const handlePinLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    
-    if (savedCustomer?.pin === pin) {
+    setIsLoading(true)
+
+    const phoneToUse = loginPhone || savedCustomer?.phone
+
+    try {
+      const res = await fetch('/api/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneToUse, pin })
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        setError(data.error || 'Nesprávny PIN')
+        setPin('')
+        setIsLoading(false)
+        return
+      }
+
+      // Ulož do localStorage a prihlás
+      localStorage.setItem('customer', JSON.stringify({ ...data.customer, phone: phoneToUse }))
       localStorage.setItem('customer_last_activity', Date.now().toString())
       router.push('/moj-ucet')
-    } else {
-      setError('Nesprávny PIN')
-      setPin('')
+    } catch (err) {
+      setError('Chyba pri prihlásení')
+      setIsLoading(false)
     }
   }
 
-  // Odoslanie SMS kódu
   const sendSms = async (resend = false) => {
     const fullPhone = isForgotPin ? savedCustomer?.phone : getFullPhone()
     if (!fullPhone) return
@@ -136,9 +136,9 @@ export default function LoginPage() {
     setIsLoading(true)
     setError('')
 
-    // Dev mód
     if (fullPhone === DEV_PHONE) {
       setIsDevMode(true)
+      setLoginPhone(fullPhone)
       setStep('sms')
       setIsLoading(false)
       if (resend) setResendTimer(60)
@@ -157,6 +157,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Chyba pri odosielaní SMS')
       }
       
+      setLoginPhone(fullPhone)
       setStep('sms')
       if (resend) setResendTimer(60)
     } catch (err: any) {
@@ -166,15 +167,13 @@ export default function LoginPage() {
     }
   }
 
-  // Overenie SMS kódu
   const verifySms = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
 
-    const fullPhone = isForgotPin ? savedCustomer?.phone : getFullPhone()
+    const fullPhone = loginPhone
 
-    // Dev mód
     if (isDevMode && smsCode === DEV_CODE) {
       await handleSmsVerified(fullPhone)
       return
@@ -199,16 +198,14 @@ export default function LoginPage() {
     }
   }
 
-  // Po úspešnom overení SMS
   const handleSmsVerified = async (fullPhone: string) => {
-    // Ak je to zabudnutý PIN - vytvor nový
     if (isForgotPin) {
       setStep('pin-reset')
       setIsLoading(false)
       return
     }
 
-    // Inak načítaj údaje zákazníka z DB
+    // Skontroluj či účet existuje
     try {
       const res = await fetch('/api/customer-login', {
         method: 'POST',
@@ -223,33 +220,15 @@ export default function LoginPage() {
         return
       }
       
-      const data = await res.json()
-      setTempCustomer({ ...data.customer, phone: fullPhone })
+      // Účet existuje - pýtaj PIN
       setStep('pin-verify')
+      setIsLoading(false)
     } catch (err: any) {
       setError(err.message)
-    } finally {
       setIsLoading(false)
     }
   }
 
-  // Overenie existujúceho PINu (nové zariadenie)
-  const handlePinVerify = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-
-    if (tempCustomer?.pin === pin) {
-      // Ulož do localStorage a prihlás
-      localStorage.setItem('customer', JSON.stringify(tempCustomer))
-      localStorage.setItem('customer_last_activity', Date.now().toString())
-      router.push('/moj-ucet')
-    } else {
-      setError('Nesprávny PIN')
-      setPin('')
-    }
-  }
-
-  // Vytvorenie nového PINu (zabudnutý PIN) - krok 1
   const handlePinReset = (e: React.FormEvent) => {
     e.preventDefault()
     if (newPin.length !== 4) {
@@ -260,7 +239,6 @@ export default function LoginPage() {
     setStep('pin-reset-confirm')
   }
 
-  // Potvrdenie nového PINu - krok 2
   const handlePinResetConfirm = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -274,23 +252,30 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Ulož nový PIN do DB
+      const phoneToUse = loginPhone || savedCustomer?.phone
+      
       const res = await fetch('/api/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'set',
           type: 'customer',
-          phone: savedCustomer.phone,
+          phone: phoneToUse,
           pin: newPin
         })
       })
 
       if (!res.ok) throw new Error('Chyba pri ukladaní PIN')
 
-      // Aktualizuj localStorage a prihlás
-      const updatedCustomer = { ...savedCustomer, pin: newPin }
-      localStorage.setItem('customer', JSON.stringify(updatedCustomer))
+      // Načítaj údaje zákazníka
+      const userRes = await fetch('/api/customer-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneToUse })
+      })
+      const userData = await userRes.json()
+
+      localStorage.setItem('customer', JSON.stringify({ ...userData.user, phone: phoneToUse }))
       localStorage.setItem('customer_last_activity', Date.now().toString())
       router.push('/moj-ucet')
     } catch (err: any) {
@@ -300,29 +285,25 @@ export default function LoginPage() {
     }
   }
 
-  // Zabudnutý PIN
   const handleForgotPin = () => {
     setIsForgotPin(true)
     setError('')
     sendSms()
   }
 
-  // Iný účet
   const handleDifferentAccount = () => {
     setSavedCustomer(null)
+    setLoginPhone('')
     setStep('phone')
     setIsForgotPin(false)
     setError('')
   }
 
-  // Odhlásenie
   const handleLogout = () => {
-    // Nechaj customer v localStorage, vymaž len aktivitu
-    localStorage.removeItem('customer_last_activity') // Po odhlásení stačí PIN
+    localStorage.removeItem('customer')
+    localStorage.removeItem('customer_last_activity')
     router.push('/')
   }
-
-  // ============ RENDER ============
 
   if (step === 'init') {
     return (
@@ -334,7 +315,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
       <div className="p-4">
         <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-black">
           <ArrowLeft className="w-5 h-5" />
@@ -342,15 +322,13 @@ export default function LoginPage() {
         </Link>
       </div>
 
-      {/* Content */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          {/* Logo */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-4">
               <span className="text-white text-2xl">📦</span>
             </div>
-            <h1 className="text-2xl font-bold">Prihlásenie</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Prihlásenie</h1>
             <p className="text-gray-500 mt-2">
               {step === 'pin-only' && 'Zadajte váš PIN'}
               {step === 'phone' && 'Zadajte telefónne číslo'}
@@ -361,16 +339,15 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-center">
               {error}
             </div>
           )}
 
-          {/* PIN ONLY - uložený účet */}
+          {/* PIN ONLY */}
           {step === 'pin-only' && (
-            <form onSubmit={handlePinOnly} className="space-y-6">
+            <form onSubmit={handlePinLogin} className="space-y-6">
               <p className="text-sm text-gray-500 text-center">
                 Prihlásenie ako {maskPhone(savedCustomer?.phone || '')}
               </p>
@@ -382,13 +359,13 @@ export default function LoginPage() {
                   placeholder="••••"
                   value={pin}
                   onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none"
+                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none text-gray-900"
                   maxLength={4}
                   autoFocus
                 />
               </div>
-              <button type="submit" disabled={pin.length !== 4} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
-                Prihlásiť sa
+              <button type="submit" disabled={isLoading || pin.length !== 4} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
+                {isLoading ? 'Prihlasujem...' : 'Prihlásiť sa'}
               </button>
               <div className="flex justify-between text-sm">
                 <button type="button" onClick={handleForgotPin} className="text-gray-600 hover:text-black">
@@ -404,7 +381,7 @@ export default function LoginPage() {
             </form>
           )}
 
-          {/* PHONE - nové zariadenie */}
+          {/* PHONE */}
           {step === 'phone' && (
             <div className="space-y-6">
               <div>
@@ -417,7 +394,7 @@ export default function LoginPage() {
                       className="flex items-center gap-2 px-3 py-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50"
                     >
                       <span className="text-xl">{selectedCountry.flag}</span>
-                      <span className="text-sm font-medium">{selectedCountry.dial}</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedCountry.dial}</span>
                       <ChevronDown className="w-4 h-4 text-gray-400" />
                     </button>
                     {showCountryDropdown && (
@@ -430,7 +407,7 @@ export default function LoginPage() {
                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl"
                           >
                             <span className="text-xl">{country.flag}</span>
-                            <span className="font-medium">{country.name}</span>
+                            <span className="font-medium text-gray-900">{country.name}</span>
                             <span className="text-gray-500 ml-auto">{country.dial}</span>
                           </button>
                         ))}
@@ -442,7 +419,7 @@ export default function LoginPage() {
                     placeholder="909 123 456"
                     value={phone}
                     onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
-                    className="flex-1 px-4 py-4 bg-white border border-gray-200 rounded-xl focus:border-black focus:outline-none"
+                    className="flex-1 px-4 py-4 bg-white border border-gray-200 rounded-xl focus:border-black focus:outline-none text-gray-900"
                     autoFocus
                   />
                 </div>
@@ -469,7 +446,7 @@ export default function LoginPage() {
                 {isDevMode ? (
                   <span className="text-orange-600">Test mód - zadajte 000000</span>
                 ) : (
-                  <>Kód sme poslali na <span className="font-medium text-black">{maskPhone(isForgotPin ? savedCustomer?.phone : getFullPhone())}</span></>
+                  <>Kód sme poslali na <span className="font-medium text-black">{maskPhone(loginPhone)}</span></>
                 )}
               </p>
               <div className="relative">
@@ -480,7 +457,7 @@ export default function LoginPage() {
                   placeholder="000000"
                   value={smsCode}
                   onChange={e => setSmsCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none"
+                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none text-gray-900"
                   maxLength={6}
                   autoFocus
                 />
@@ -502,11 +479,11 @@ export default function LoginPage() {
             </form>
           )}
 
-          {/* PIN VERIFY - nové zariadenie, overenie existujúceho PINu */}
+          {/* PIN VERIFY - po SMS z nového zariadenia */}
           {step === 'pin-verify' && (
-            <form onSubmit={handlePinVerify} className="space-y-6">
+            <form onSubmit={handlePinLogin} className="space-y-6">
               <p className="text-sm text-gray-500 text-center">
-                Zadajte PIN pre účet {maskPhone(tempCustomer?.phone || '')}
+                Zadajte PIN pre účet {maskPhone(loginPhone)}
               </p>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -516,18 +493,18 @@ export default function LoginPage() {
                   placeholder="••••"
                   value={pin}
                   onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none"
+                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none text-gray-900"
                   maxLength={4}
                   autoFocus
                 />
               </div>
-              <button type="submit" disabled={pin.length !== 4} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
-                Prihlásiť sa
+              <button type="submit" disabled={isLoading || pin.length !== 4} className="w-full py-4 bg-black text-white rounded-xl font-semibold disabled:opacity-50">
+                {isLoading ? 'Prihlasujem...' : 'Prihlásiť sa'}
               </button>
             </form>
           )}
 
-          {/* PIN RESET - vytvorenie nového PINu */}
+          {/* PIN RESET */}
           {step === 'pin-reset' && (
             <form onSubmit={handlePinReset} className="space-y-6">
               <p className="text-sm text-gray-500 text-center">Zadajte nový 4-miestny PIN</p>
@@ -539,7 +516,7 @@ export default function LoginPage() {
                   placeholder="••••"
                   value={newPin}
                   onChange={e => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none"
+                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none text-gray-900"
                   maxLength={4}
                   autoFocus
                 />
@@ -562,7 +539,7 @@ export default function LoginPage() {
                   placeholder="••••"
                   value={newPinConfirm}
                   onChange={e => setNewPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none"
+                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-center text-2xl tracking-widest focus:border-black focus:outline-none text-gray-900"
                   maxLength={4}
                   autoFocus
                 />
