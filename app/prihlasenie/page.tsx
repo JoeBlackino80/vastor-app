@@ -163,7 +163,7 @@ export default function LoginPage() {
     const fullPhone = forgotPin ? savedPhone : getFullPhone()
 
     if (isDevMode && smsCode === DEV_CODE) {
-      setStep('new-pin')
+      setStep('pin')
       setIsSubmitting(false)
       return
     }
@@ -191,7 +191,7 @@ export default function LoginPage() {
 
       localStorage.setItem('temp_login_phone', fullPhone!)
       localStorage.setItem('temp_login_user', JSON.stringify(userData.user))
-      setStep('new-pin')
+      setStep('pin')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Nesprávny kód')
     } finally {
