@@ -130,6 +130,9 @@ function OrderForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          customer_name: (customer?.first_name && customer?.last_name) ? customer.first_name + " " + customer.last_name : formData.pickup_name + " " + formData.pickup_surname,
+          customer_email: customer?.email || null,
+          customer_phone: customer?.phone || fullPickupPhone,
           ...formData,
           pickup_phone: fullPickupPhone,
           delivery_phone: fullDeliveryPhone,
