@@ -186,7 +186,6 @@ export async function POST(request: Request) {
         console.error('Recipient email error:', e)
       }
     }
-    }
 
     // Posli SMS zakaznikovi
     if (body.customer_phone) {
