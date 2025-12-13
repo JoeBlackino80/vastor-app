@@ -187,6 +187,7 @@ export async function POST(request: Request) {
       }
     }
 
+    console.log("SMS check - customer_phone:", body.customer_phone, "recipient_phone:", body.recipient_phone)
     // Posli SMS zakaznikovi
     if (body.customer_phone) {
       try {
