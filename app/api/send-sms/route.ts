@@ -17,9 +17,9 @@ export async function POST(request: Request) {
     // Použij Twilio pre SMS
     const accountSid = process.env.TWILIO_ACCOUNT_SID
     const authToken = process.env.TWILIO_AUTH_TOKEN
-    const fromPhone = process.env.TWILIO_PHONE_NUMBER
+    const senderId = process.env.TWILIO_SENDER_ID
 
-    if (accountSid && authToken && fromPhone) {
+    if (accountSid && authToken && senderId) {
       const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`
       
       const response = await fetch(twilioUrl, {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         },
         body: new URLSearchParams({
           To: phone,
-          From: fromPhone,
+          From: senderId,
           Body: message
         })
       })
