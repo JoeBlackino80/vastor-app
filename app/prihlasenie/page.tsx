@@ -108,19 +108,34 @@ export default function LoginPage() {
     setIsSubmitting(true)
 
     try {
+      // Skús najprv localStorage (rovnaké zariadenie)
       const saved = JSON.parse(localStorage.getItem('customer') || '{}')
-      if (saved.pin === pin) {
+      if (saved.pin && saved.pin === pin) {
         localStorage.setItem('customer_last_activity', Date.now().toString())
         router.push('/moj-ucet')
-      } else {
-        setError('Nesprávny PIN')
-        setPin('')
+        return
       }
+
+      // Skús temp_login_user (nové zariadenie po SMS)
+      const tempUser = JSON.parse(localStorage.getItem('temp_login_user') || '{}')
+      const tempPhone = localStorage.getItem('temp_login_phone')
+      if (tempUser.pin && tempUser.pin === pin) {
+        localStorage.setItem('customer', JSON.stringify(tempUser))
+        localStorage.setItem('customer_last_activity', Date.now().toString())
+        localStorage.removeItem('temp_login_user')
+        localStorage.removeItem('temp_login_phone')
+        router.push('/moj-ucet')
+        return
+      }
+
+      setError('Nesprávny PIN')
+      setPin('')
     } catch (err) {
       setError('Chyba pri prihlásení')
     } finally {
       setIsSubmitting(false)
     }
+  }
   }
 
   const sendSmsOtp = async (resend = false) => {
