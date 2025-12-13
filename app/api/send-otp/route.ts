@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 const DEV_PHONES = ['+421909188881']
-const otpStore = new Map<string, { code: string; expires: number }>()
 
 export async function POST(request: Request) {
   try {
@@ -11,15 +16,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Telefónne číslo je povinné' }, { status: 400 })
     }
 
+    // Dev mód
     if (DEV_PHONES.includes(phone)) {
-      otpStore.set(phone, { code: '000000', expires: Date.now() + 10 * 60 * 1000 })
       console.log(`DEV MODE: OTP for ${phone} is 000000`)
       return NextResponse.json({ success: true, dev: true })
     }
 
     const code = Math.floor(100000 + Math.random() * 900000).toString()
-    otpStore.set(phone, { code, expires: Date.now() + 10 * 60 * 1000 })
+    const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
+    // Ulož do databázy
+    await supabase.from('otp_codes').upsert({
+      phone,
+      code,
+      expires_at: expires
+    }, { onConflict: 'phone' })
+
+    // Pošli SMS
     const accountSid = process.env.TWILIO_ACCOUNT_SID
     const authToken = process.env.TWILIO_AUTH_TOKEN
     const senderId = process.env.TWILIO_SENDER_ID
@@ -50,7 +63,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nepodarilo sa odoslat SMS' }, { status: 500 })
     }
 
-    console.log(`OTP sent to ${phone}: ${code}`)
+    console.log(`OTP sent to ${phone}`)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Send OTP error:', error)
@@ -66,22 +79,34 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Telefón a kód sú povinné' }, { status: 400 })
     }
 
-    const stored = otpStore.get(phone)
-
-    if (!stored) {
-      return NextResponse.json({ error: 'Kód nebol nájdený alebo vypršal' }, { status: 400 })
+    // Dev mód
+    if (DEV_PHONES.includes(phone) && code === '000000') {
+      return NextResponse.json({ success: true, verified: true })
     }
 
-    if (Date.now() > stored.expires) {
-      otpStore.delete(phone)
+    // Načítaj z databázy
+    const { data, error } = await supabase
+      .from('otp_codes')
+      .select('code, expires_at')
+      .eq('phone', phone)
+      .single()
+
+    if (error || !data) {
+      return NextResponse.json({ error: 'Kód nebol nájdený' }, { status: 400 })
+    }
+
+    if (new Date() > new Date(data.expires_at)) {
+      await supabase.from('otp_codes').delete().eq('phone', phone)
       return NextResponse.json({ error: 'Kód vypršal' }, { status: 400 })
     }
 
-    if (stored.code !== code) {
+    if (data.code !== code) {
       return NextResponse.json({ error: 'Nesprávny kód' }, { status: 400 })
     }
 
-    otpStore.delete(phone)
+    // Vymaž použitý kód
+    await supabase.from('otp_codes').delete().eq('phone', phone)
+
     return NextResponse.json({ success: true, verified: true })
   } catch (error) {
     console.error('Verify OTP error:', error)
