@@ -136,7 +136,6 @@ export default function LoginPage() {
       setIsSubmitting(false)
     }
   }
-  }
 
   const sendSmsOtp = async (resend = false) => {
     const fullPhone = forgotPin ? savedPhone : getFullPhone()
