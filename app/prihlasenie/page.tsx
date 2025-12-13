@@ -12,9 +12,31 @@ const SESSION_TIMEOUT = 5 * 60 * 1000 // 5 minutes
 const COUNTRIES = [
   { code: 'SK', name: 'Slovensko', dial: '+421', flag: '🇸🇰' },
   { code: 'CZ', name: 'Česko', dial: '+420', flag: '🇨🇿' },
+  { code: 'AT', name: 'Rakúsko', dial: '+43', flag: '🇦🇹' },
+  { code: 'DE', name: 'Nemecko', dial: '+49', flag: '🇩🇪' },
   { code: 'PL', name: 'Poľsko', dial: '+48', flag: '🇵🇱' },
   { code: 'HU', name: 'Maďarsko', dial: '+36', flag: '🇭🇺' },
-  { code: 'AT', name: 'Rakúsko', dial: '+43', flag: '🇦🇹' },
+  { code: 'FR', name: 'Francúzsko', dial: '+33', flag: '🇫🇷' },
+  { code: 'IT', name: 'Taliansko', dial: '+39', flag: '🇮🇹' },
+  { code: 'ES', name: 'Španielsko', dial: '+34', flag: '🇪🇸' },
+  { code: 'NL', name: 'Holandsko', dial: '+31', flag: '🇳🇱' },
+  { code: 'BE', name: 'Belgicko', dial: '+32', flag: '🇧🇪' },
+  { code: 'PT', name: 'Portugalsko', dial: '+351', flag: '🇵🇹' },
+  { code: 'SE', name: 'Švédsko', dial: '+46', flag: '🇸🇪' },
+  { code: 'DK', name: 'Dánsko', dial: '+45', flag: '🇩🇰' },
+  { code: 'FI', name: 'Fínsko', dial: '+358', flag: '🇫🇮' },
+  { code: 'IE', name: 'Írsko', dial: '+353', flag: '🇮🇪' },
+  { code: 'GR', name: 'Grécko', dial: '+30', flag: '🇬🇷' },
+  { code: 'RO', name: 'Rumunsko', dial: '+40', flag: '🇷🇴' },
+  { code: 'BG', name: 'Bulharsko', dial: '+359', flag: '🇧🇬' },
+  { code: 'HR', name: 'Chorvátsko', dial: '+385', flag: '🇭🇷' },
+  { code: 'SI', name: 'Slovinsko', dial: '+386', flag: '🇸🇮' },
+  { code: 'EE', name: 'Estónsko', dial: '+372', flag: '🇪🇪' },
+  { code: 'LV', name: 'Lotyšsko', dial: '+371', flag: '🇱🇻' },
+  { code: 'LT', name: 'Litva', dial: '+370', flag: '🇱🇹' },
+  { code: 'LU', name: 'Luxembursko', dial: '+352', flag: '🇱🇺' },
+  { code: 'MT', name: 'Malta', dial: '+356', flag: '🇲🇹' },
+  { code: 'CY', name: 'Cyprus', dial: '+357', flag: '🇨🇾' },
 ]
 
 type LoginStep = 'check' | 'pin' | 'phone' | 'sms' | 'new-pin' | 'new-pin-confirm'
@@ -307,7 +329,7 @@ export default function LoginPage() {
                       <ChevronDown className="w-4 h-4 text-gray-400" />
                     </button>
                     {showCountryDropdown && (
-                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 min-w-[200px]">
+                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 min-w-[200px] max-h-[300px] overflow-y-auto">
                         {COUNTRIES.map(country => (
                           <button key={country.code} type="button" onClick={() => { setSelectedCountry(country); setShowCountryDropdown(false) }}
                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl">
