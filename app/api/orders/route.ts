@@ -186,11 +186,50 @@ export async function POST(request: Request) {
         console.error('Recipient email error:', e)
       }
     }
+    }
+
+    // Posli SMS zakaznikovi
+    if (body.customer_phone) {
+      try {
+        const trackingUrl = `https://voru.sk/sledovat/${order.id}`
+        await fetch(new URL('/api/send-sms', request.url).toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: body.customer_phone,
+            message: `voru: Objednavka prijata! Kurier bude priradeny. Sledujte: ${trackingUrl}`,
+            order_id: order.id,
+            type: 'confirmed'
+          })
+        })
+      } catch (e) {
+        console.error('Customer SMS error:', e)
+      }
+    }
+
+    // Posli SMS prijemcovi s PIN
+    if (body.recipient_phone) {
+      try {
+        const trackingUrl = `https://voru.sk/sledovat/${order.id}`
+        await fetch(new URL('/api/send-sms', request.url).toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: body.recipient_phone,
+            message: `voru: Mate zasielku na ceste! PIN: ${deliveryPin}. Sledujte: ${trackingUrl}`,
+            order_id: order.id,
+            type: 'delivery'
+          })
+        })
+      } catch (e) {
+        console.error('Recipient SMS error:', e)
+      }
+    }
 
     return NextResponse.json({ success: true, order })
   } catch (error) {
     console.error('Order error:', error)
-    return NextResponse.json({ error: 'Nepodarilo sa vytvoriť objednávku' }, { status: 500 })
+    return NextResponse.json({ error: 'Nepodarilo sa vytvorit objednavku' }, { status: 500 })
   }
 }
 
