@@ -239,7 +239,7 @@ function OrderForm() {
                     {showPickupCountry && (
                       <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-10 min-w-[180px]">
                         {COUNTRIES.map(c => (
-                          <button key={c.code} type="button" onClick={() => { setPickupCountry(c); setShowPickupCountry(false); setFormData({...formData, pickup_country: c.name}) }}
+                          <button key={c.code} type="button" onClick={() => { setPickupCountry(c); setShowPickupCountry(false) }}
                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 first:rounded-t-xl last:rounded-b-xl">
                             <span className="text-xl">{c.flag}</span>
                             <span className="font-medium dark:text-white">{c.name}</span>
@@ -284,7 +284,7 @@ function OrderForm() {
                     {showDeliveryCountry && (
                       <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-10 min-w-[180px]">
                         {COUNTRIES.map(c => (
-                          <button key={c.code} type="button" onClick={() => { setDeliveryCountry(c); setShowDeliveryCountry(false); setFormData({...formData, delivery_country: c.name}) }}
+                          <button key={c.code} type="button" onClick={() => { setDeliveryCountry(c); setShowDeliveryCountry(false) }}
                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 first:rounded-t-xl last:rounded-b-xl">
                             <span className="text-xl">{c.flag}</span>
                             <span className="font-medium dark:text-white">{c.name}</span>
