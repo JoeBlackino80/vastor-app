@@ -1,18 +1,37 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
+  const phone = searchParams.get('phone')
   const email = searchParams.get('email')
-  if (!email) {
-    return NextResponse.json({ error: 'Missing email' }, { status: 400 })
+
+  if (!phone && !email) {
+    return NextResponse.json({ error: 'Missing phone or email' }, { status: 400 })
   }
-  const { data: orders, error } = await (supabase.from('orders') as any)
+
+  let query = supabase
+    .from('orders')
     .select('*')
-    .eq('customer_email', email)
     .order('created_at', { ascending: false })
-  if (error) {
-    return NextResponse.json({ orders: [] })
+
+  if (phone) {
+    query = query.eq('customer_phone', phone)
+  } else if (email) {
+    query = query.eq('customer_email', email)
   }
-  return NextResponse.json({ orders: orders || [] })
+
+  const { data: orders, error } = await query
+
+  if (error) {
+    console.error('Customer orders error:', error)
+    return NextResponse.json([])
+  }
+
+  return NextResponse.json(orders || [])
 }
