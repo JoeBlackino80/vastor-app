@@ -289,6 +289,9 @@ export default function LoginPage() {
                 <button type="button" onClick={handleForgotPin} className="text-gray-600 hover:text-black">Zabudol som PIN</button>
                 <button type="button" onClick={useDifferentPhone} className="text-gray-600 hover:text-black">Iný účet</button>
               </div>
+              <div className="text-center">
+                <button type="button" onClick={() => { localStorage.removeItem('customer'); localStorage.removeItem('customer_last_activity'); router.push('/'); }} className="text-red-500 hover:text-red-700 text-sm">Odhlásiť sa úplne</button>
+              </div>
             </form>
           )}
 
