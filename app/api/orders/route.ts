@@ -197,7 +197,7 @@ export async function POST(request: Request) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             phone: body.customer_phone,
-            message: `voru: Objednavka prijata! Kurier bude priradeny. Sledujte: ${trackingUrl}`,
+            message: `VORU: Vasa objednavka bola prijata. Kurier bude priradeny. Sledujte stav na voru.sk`,
             order_id: order.id,
             type: 'confirmed'
           })
@@ -216,7 +216,7 @@ export async function POST(request: Request) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             phone: body.recipient_phone,
-            message: `voru: Mate zasielku na ceste! PIN: ${deliveryPin}. Sledujte: ${trackingUrl}`,
+            message: `VORU: Mate zasielku na ceste. Vas PIN kod: ${deliveryPin}`,
             order_id: order.id,
             type: 'delivery'
           })
