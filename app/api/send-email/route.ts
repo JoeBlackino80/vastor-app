@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: "voru <onboarding@resend.dev>",
+      from: "voru <noreply@voru.sk>",
       to: [to],
       subject,
       html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;"><div style="background:#000;color:#fff;padding:20px;text-align:center;"><h1 style="margin:0;">voru</h1></div><div style="padding:30px;background:#f9f9f9;">${content}<p style="margin-top:30px;color:#666;font-size:12px;">Objednávka: ${orderId}</p></div></div>`
