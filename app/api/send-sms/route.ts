@@ -1,37 +1,63 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
-// Pre SMS môžeš použiť Twilio, MessageBird, alebo slovenský GoSMS
-// Toto je príklad s fetch na SMS API
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(request: Request) {
   try {
     const { phone, message, order_id, type } = await request.json()
 
-    // Tu integruješ SMS provider (Twilio, GoSMS, atď.)
-    // Príklad s GoSMS.sk:
-    /*
-    const response = await fetch('https://app.gosms.sk/api/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.GOSMS_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: message,
-        recipients: phone,
-        channel: 'sms'
+    if (!phone || !message) {
+      return NextResponse.json({ error: 'Phone and message required' }, { status: 400 })
+    }
+
+    // Použij Twilio pre SMS
+    const accountSid = process.env.TWILIO_ACCOUNT_SID
+    const authToken = process.env.TWILIO_AUTH_TOKEN
+    const fromPhone = process.env.TWILIO_PHONE_NUMBER
+
+    if (accountSid && authToken && fromPhone) {
+      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`
+      
+      const response = await fetch(twilioUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          To: phone,
+          From: fromPhone,
+          Body: message
+        })
       })
-    })
-    */
 
-    // Mark SMS as sent in order
-    const updateField = type === 'pickup' ? 'sms_sent_pickup' : 'sms_sent_delivery'
-    await (supabase.from('orders') as any)
-      .update({ [updateField]: true })
-      .eq('id', order_id)
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Twilio error:', error)
+        // Don't fail the request, just log
+      }
+    } else {
+      // Fallback - just log
+      console.log(`SMS to ${phone}: ${message}`)
+    }
 
-    console.log(`SMS sent to ${phone}: ${message}`)
+    // Mark SMS as sent in order if order_id provided
+    if (order_id && type) {
+      const updateField = type === 'pickup' ? 'sms_sent_pickup' : 
+                          type === 'delivery' ? 'sms_sent_delivery' :
+                          type === 'confirmed' ? 'sms_sent_confirmed' : null
+      
+      if (updateField) {
+        await supabase
+          .from('orders')
+          .update({ [updateField]: true })
+          .eq('id', order_id)
+      }
+    }
     
     return NextResponse.json({ success: true })
   } catch (error) {
