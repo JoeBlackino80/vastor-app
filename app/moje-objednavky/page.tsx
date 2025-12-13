@@ -15,17 +15,17 @@ export default function MyOrders() {
     if (saved) {
       const c = JSON.parse(saved)
       setCustomer(c)
-      fetchOrders(c.email)
+      fetchOrders(c.phone)
     } else {
       setIsLoading(false)
     }
   }, [])
 
-  const fetchOrders = async (email: string) => {
+  const fetchOrders = async (phone: string) => {
     try {
-      const res = await fetch(`/api/customer-orders?email=${encodeURIComponent(email)}`)
+      const res = await fetch('/api/customer-orders?phone=' + encodeURIComponent(phone))
       const data = await res.json()
-      setOrders(data.orders || [])
+      setOrders(Array.isArray(data) ? data : data.orders || [])
     } catch (err) {
       console.error('Error fetching orders:', err)
     } finally {
@@ -34,7 +34,6 @@ export default function MyOrders() {
   }
 
   const handleReorder = (order: any) => {
-    // Uložíme údaje do localStorage a presmerujeme na objednávku
     const reorderData = {
       pickup_address: order.pickup_address,
       pickup_notes: order.pickup_notes || '',
@@ -63,16 +62,16 @@ export default function MyOrders() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `objednavky-${new Date().toISOString().split("T")[0]}.csv`
+    a.download = 'objednavky-' + new Date().toISOString().split("T")[0] + '.csv'
     a.click()
   }
-
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'delivered': return 'bg-green-100 text-green-800'
       case 'assigned': return 'bg-blue-100 text-blue-800'
       case 'pending': return 'bg-yellow-100 text-yellow-800'
+      case 'looking_for_courier': return 'bg-orange-100 text-orange-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -82,6 +81,7 @@ export default function MyOrders() {
       case 'delivered': return 'Doručené'
       case 'assigned': return 'Kuriér priradený'
       case 'pending': return 'Čaká na kuriéra'
+      case 'looking_for_courier': return 'Hľadá sa kuriér'
       default: return status
     }
   }
@@ -100,7 +100,14 @@ export default function MyOrders() {
         <button onClick={() => router.back()} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full mb-4">
           <ArrowLeft className="w-6 h-6 dark:text-white" />
         </button>
-        <div className="flex items-center justify-between mb-6"><h1 className="text-2xl font-bold dark:text-white">Moje objednávky</h1>{orders.length > 0 && (<button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-sm font-medium dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"><Download className="w-4 h-4" />Export CSV</button>)}</div>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold dark:text-white">Moje objednávky</h1>
+          {orders.length > 0 && (
+            <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-sm font-medium dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600">
+              <Download className="w-4 h-4" />Export CSV
+            </button>
+          )}
+        </div>
 
         {!customer ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center shadow-sm">
@@ -127,7 +134,7 @@ export default function MyOrders() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">{new Date(order.created_at).toLocaleDateString('sk-SK')}</p>
                     <p className="font-bold dark:text-white">{order.price} €</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                  <span className={'px-3 py-1 rounded-full text-xs font-medium ' + getStatusColor(order.status)}>
                     {getStatusText(order.status)}
                   </span>
                 </div>
@@ -141,18 +148,14 @@ export default function MyOrders() {
                     <p className="text-sm dark:text-gray-300">{order.delivery_address}</p>
                   </div>
                 </div>
-                
-                {/* Foto doručenia */}
                 {order.delivery_photo_url && (
                   <a href={order.delivery_photo_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-green-600 text-sm font-medium mb-3">
                     <Image className="w-4 h-4" /> Foto doručenia
                   </a>
                 )}
-
-                {/* Akcie */}
                 <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                   {order.status === 'assigned' && (
-                    <Link href={`/sledovat/${order.id}`} className="flex items-center gap-1 text-blue-600 text-sm font-medium">
+                    <Link href={'/sledovat/' + order.id} className="flex items-center gap-1 text-blue-600 text-sm font-medium">
                       <Eye className="w-4 h-4" /> Sledovať
                     </Link>
                   )}
